@@ -51,7 +51,9 @@ if __name__ == "__main__":
     print("Processing...")
     clean_urls = build_clean_urls(pages, fix_canonical=args.fix_canonical)
 
-    print("Generating sitemap...")
-    generate_sitemap(clean_urls, filename=args.output)
+    print("Generating sitemap(s)...")
+    files = generate_sitemaps(clean_urls, base_url=args.domain)
+
+    print(f"Done. Generated {len(files)} sitemap file(s)")
 
     print(f"Done. Generated {args.output} with {len(clean_urls)} URLs")
