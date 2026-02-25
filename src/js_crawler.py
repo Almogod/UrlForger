@@ -20,7 +20,7 @@ async def crawl_js(start_url, limit=200):
                 continue
 
             try:
-                await page.goto(url, timeout=15000)
+                await page.goto(url, timeout=15000, wait_until="networkidle")
                 html = await page.content()
 
                 visited.add(url)
