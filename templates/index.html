@@ -1,1 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sitemap Fixer</title>
+</head>
+<body>
+    <h1>Sitemap Fixer</h1>
 
+    <form action="/generate" method="post">
+        <label>Domain:</label><br>
+        <input type="text" name="domain" placeholder="https://example.com" required><br><br>
+
+        <label>Limit:</label><br>
+        <input type="number" name="limit" value="200"><br><br>
+
+        <label>
+            <input type="checkbox" name="use_js"> Use JS Rendering
+        </label><br>
+
+        <label>
+            <input type="checkbox" name="fix_canonical"> Fix Canonical URLs
+        </label><br><br>
+
+        <button type="submit">Generate Sitemap</button>
+    </form>
+</body>
+</html>
