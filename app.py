@@ -12,7 +12,7 @@ from src.generator import generate_sitemaps
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="."), name="static") # Moved below app init
+app.mount("/files", StaticFiles(directory="."), name="files")
 
 templates = Jinja2Templates(directory="templates")
 
