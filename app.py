@@ -11,9 +11,9 @@ from src.filter import is_valid
 from src.generator import generate_sitemaps
 from fastapi.staticfiles import StaticFiles
 
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="."), name="static") # Moved below app init
+
 templates = Jinja2Templates(directory="templates")
 
 
@@ -38,13 +38,12 @@ def home(request: Request):
 
 
 @app.post("/generate")
-def generate(request: Request, domain: str = Form(...), limit: int = Form(200), use_js: bool = Form(False)):
 def generate(
-    return templates.TemplateResponse("index.html", {
-    "request": request,
-    "files": files,
-    "count": len(clean_urls)
-})
+    request: Request, 
+    domain: str = Form(...), 
+    limit: int = Form(200), 
+    use_js: bool = Form(False),
+    fix_canonical: bool = Form(False) # Added missing arg used in build_clean_urls
 ):
     if use_js:
         pages = crawl_js_sync(domain, limit=limit)
@@ -52,11 +51,10 @@ def generate(
         pages = crawl(domain, limit=limit)
 
     clean_urls = build_clean_urls(pages, fix_canonical)
-
     files = generate_sitemaps(clean_urls, base_url=domain)
 
-    return {
-        "message": "Sitemap generated",
+    return templates.TemplateResponse("index.html", {
+        "request": request,
         "files": files,
         "count": len(clean_urls)
-    }
+    })
