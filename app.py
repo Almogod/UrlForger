@@ -47,7 +47,7 @@ def generate(
 
     clean_urls = build_clean_urls(pages, fix_canonical)
 
-    files = generate_sitemaps(clean_urls, base_url=domain)
+    files = generate_sitemaps(clean_urls, base_url=domain, output_prefix="./sitemap")
 
     return templates.TemplateResponse("index.html", {
         "request": request,
