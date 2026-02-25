@@ -1,12 +1,14 @@
 import httpx
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+from src.robots import get_robot_parser, is_allowed
 
 def crawl(start_url, limit=200):
     visited = set()
     to_visit = set([start_url])
     results = []
-
+    rp = get_robot_parser(start_url)
+    
     with httpx.Client(timeout=10, follow_redirects=True) as client:
         while to_visit and len(visited) < limit:
             url = to_visit.pop()
@@ -14,6 +16,9 @@ def crawl(start_url, limit=200):
             if url in visited:
                 continue
 
+            if not is_allowed(rp, url):
+                continue
+            
             try:
                 r = client.get(url)
                 visited.add(url)
