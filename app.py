@@ -37,25 +37,29 @@ def build_clean_urls(pages, fix_canonical=False):
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/generate")
+@app.post("/generate", response_class=HTMLResponse)
 def generate(
-    request: Request, 
-    domain: str = Form(...), 
-    limit: int = Form(200), 
+    request: Request,
+    domain: str = Form(...),
+    limit: int = Form(200),
     use_js: bool = Form(False),
-    fix_canonical: bool = Form(False)
+    fix_canonical: bool = Form(False),
 ):
+    print(f"Domain: {domain}")
+
     if use_js:
         pages = crawl_js_sync(domain, limit=limit)
     else:
         pages = crawl(domain, limit=limit)
 
+    print(f"Crawled pages: {len(pages)}")
+
     clean_urls = build_clean_urls(pages, fix_canonical)
+
+    print(f"Clean URLs: {len(clean_urls)}")
+
     files = generate_sitemaps(clean_urls, base_url=domain)
 
-    # Added requested print statements
-    print(f"Crawled pages: {len(pages)}")
-    print(f"Clean URLs: {len(clean_urls)}")
     print(f"Generated files: {files}")
 
     return templates.TemplateResponse("index.html", {
@@ -63,3 +67,7 @@ def generate(
         "files": files,
         "count": len(clean_urls)
     })
+
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    return FileResponse(filename)
