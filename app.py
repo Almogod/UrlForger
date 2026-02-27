@@ -20,12 +20,26 @@ templates = Jinja2Templates(directory="templates")
 
 def build_clean_urls(pages, fix_canonical=False):
     clean = set()
+
     for p in pages:
         meta = extract_metadata(p)
+
         if not is_valid(meta):
             continue
-        chosen = meta["canonical"] if (fix_canonical and meta["canonical"]) else meta["url"]
-        clean.add(normalize(chosen))
+
+        chosen = meta["url"]
+
+        if fix_canonical:
+            canonical = meta.get("canonical")
+
+            if canonical and canonical.startswith("http"):
+                chosen = canonical
+
+        try:
+            clean.add(normalize(chosen))
+        except:
+            continue
+
     return list(clean)
 
 
@@ -42,28 +56,22 @@ def generate(
     use_js: bool = Form(False),
     fix_canonical: bool = Form(False),
 ):
-    # 1. Crawl the domain
+
+    try:
     if use_js:
         pages = crawl_js_sync(domain, limit=limit)
     else:
         pages = crawl(domain, limit=limit)
 
-    # 2. Clean and process URLs
     clean_urls = build_clean_urls(pages, fix_canonical)
 
-    # 3. Generate sitemaps
-    files = generate_sitemaps(clean_urls, base_url=domain, output_prefix="./sitemap")
+    files = generate_sitemaps(clean_urls, base_url=domain)
 
-    # --- START OF MODIFIED SECTION ---
-    # Convert filenames to absolute paths
-    file_paths = [os.path.abspath(f) for f in files]
-
+except Exception as e:
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "files": file_paths,
-        "count": len(clean_urls)
+        "error": str(e)
     })
-    # --- END OF MODIFIED SECTION ---
 
 @app.get("/download")
 def download_file(path: str):
