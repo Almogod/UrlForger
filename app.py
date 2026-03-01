@@ -43,7 +43,7 @@ def home(request: Request):
 def generate(
     request: Request,
     domain: str = Form(...),
-    limit: int = Form(30), 
+    limit: int = Form(15), 
     use_js: bool = Form(False),
     fix_canonical: bool = Form(False),
 ):
@@ -57,7 +57,7 @@ def generate(
                 future = executor.submit(run_js_task, domain, limit)
                 try:
                     # Single call to result with a unified timeout
-                    pages = future.result(timeout=60)
+                    pages = future.result(timeout=120)
                 except Exception: 
                     pages = []
         else:
