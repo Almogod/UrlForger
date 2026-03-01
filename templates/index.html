@@ -72,7 +72,14 @@
         </ul>
     {% endfor %}
 {% endif %}
-
+{% if fixes %}
+    <h2>Fixes Applied Automatically</h2>
+    <ul>
+        {% for fix in fixes %}
+            <li>{{fix}}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
     
 </body>
 </html>
