@@ -63,11 +63,21 @@ def generate(
 
     try:
         if use_js:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(run_js, domain, limit)
                 pages = future.result(timeout=30)
+                try:
+                    pages = futures.result(timeout=60)
+                except: 
+                    pages = []
         else:
             pages = crawl(domain, limit=limit)
+
+       if not pages:
+            return templates.TemplateResponse("index.html", {
+                "request": request,
+                "error": "JS crawling failed or timed out"
+            })
 
         clean_urls = build_clean_urls(pages, fix_canonical)
 
@@ -84,6 +94,7 @@ def generate(
             "request": request,
             "error": str(e)
         })
+
 
 @app.get("/download")
 def download_file(file: str):
