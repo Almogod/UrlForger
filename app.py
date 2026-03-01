@@ -16,6 +16,8 @@ from src.sitemap_parser import get_sitemap_urls
 # Audit modules
 from src.audit import generate_audit_report
 from src.fixer import fix_urls, generate_fix_report
+#Engine modules
+from src.engine import run_engine
 
 app = FastAPI()
 
@@ -84,21 +86,16 @@ def generate(
                 "html": ""
             })
 
-        # 3. Clean URLs
         clean_urls = build_clean_urls(pages, fix_canonical)
 
-        # ✅ 4. GENERATE AUDIT (THIS WAS MISSING / WRONG)
-        audit = generate_audit_report(pages, clean_urls)
+        engine_result = run_engine(pages, clean_urls)
 
-        # 5. Apply fixes
-        fixed_urls = fix_urls(clean_urls)
+        audit = engine_result["audit"]
+        fixed_urls = engine_result["fixed_urls"]
+        fixes_applied = engine_result["fixes"]
+        plan = engine_result["plan"]
 
-        # 6. Generate sitemap
         files = generate_sitemaps(fixed_urls, base_url=domain)
-
-        # ✅ 7. GENERATE FIXES LIST
-        fixes_applied = generate_fix_report(audit)
-
         # 🔥 DEBUG PRINT (you will see this in terminal)
         print("AUDIT:", audit)
         print("FIXES:", fixes_applied)
@@ -109,7 +106,7 @@ def generate(
             "count": len(fixed_urls),
             "audit": audit,
             "fixes": fixes_applied,
-            "debug": "WORKING"
+            "plan": plan
         })
 
     except Exception as e:
