@@ -67,24 +67,16 @@ def home(request: Request):
 def generate(
     request: Request,
     domain: str = Form(...),
-    limit: int = Form(50),  # increased slightly (safe for HTML crawler)
+    limit: int = Form(50),
     use_js: bool = Form(False),
     fix_canonical: bool = Form(False),
 ):
-    def run_js_task(target_domain, target_limit):
-        return crawl_js_sync(target_domain, limit=target_limit)
-
     try:
-        # -----------------------------
-        # PRIMARY: SMART HTML CRAWL
-        # -----------------------------
+        # 1. Crawl
         pages = crawl(domain, limit=limit)
 
-        # -----------------------------
-        # ADD SITEMAP URLs (IMPORTANT)
-        # -----------------------------
+        # 2. Add sitemap URLs
         sitemap_urls = get_sitemap_urls(domain)
-
         for url in sitemap_urls:
             pages.append({
                 "url": url,
@@ -92,47 +84,38 @@ def generate(
                 "html": ""
             })
 
-        # -----------------------------
-        # OPTIONAL JS FALLBACK
-        # -----------------------------
-        if use_js and len(pages) < 5:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(run_js_task, domain, 15)
-
-                try:
-                    js_pages = future.result(timeout=60)
-                    pages.extend(js_pages)
-                except:
-                    pass
-
-        if not pages:
-            return templates.TemplateResponse("index.html", {
-                "request": request,
-                "error": "No pages found. Site may block crawling."
-            })
-
-        # -----------------------------
-        # CLEAN + GENERATE SITEMAP
-        # -----------------------------
+        # 3. Clean URLs
         clean_urls = build_clean_urls(pages, fix_canonical)
+
+        # ✅ 4. GENERATE AUDIT (THIS WAS MISSING / WRONG)
         audit = generate_audit_report(pages, clean_urls)
+
+        # 5. Apply fixes
         fixed_urls = fix_urls(clean_urls)
-        files = generate_sitemaps(clean_urls, base_url=domain)
+
+        # 6. Generate sitemap
+        files = generate_sitemaps(fixed_urls, base_url=domain)
+
+        # ✅ 7. GENERATE FIXES LIST
         fixes_applied = generate_fix_report(audit)
+
+        # 🔥 DEBUG PRINT (you will see this in terminal)
+        print("AUDIT:", audit)
+        print("FIXES:", fixes_applied)
+
         return templates.TemplateResponse("index.html", {
             "request": request,
             "files": files,
-            "count": len(clean_urls)
+            "count": len(fixed_urls),
+            "audit": audit,
+            "fixes": fixes_applied,
+            "debug": "WORKING"
         })
 
     except Exception as e:
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "files": files,
-            "count": len(clean_urls),
-            "audit": audit,
-            "fixes": fixes_applied,
-            "debug": "TEST_WORKING"
+            "error": str(e)
         })
 
 
