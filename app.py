@@ -54,7 +54,7 @@ def home(request: Request):
 def generate(
     request: Request,
     domain: str = Form(...),
-    limit: int = Form(50),  # reduced for JS stability
+    limit: int = Form(30), 
     use_js: bool = Form(False),
     fix_canonical: bool = Form(False),
 ):
