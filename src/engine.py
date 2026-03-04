@@ -1,63 +1,57 @@
+# src/engine.py
+
 from src.audit import generate_audit_report
-from src.fixer import fix_urls, generate_fix_report
+from src.fixer import fix_urls
+from src.modules.sitemap import fix_sitemap
+from src.modules.canonical import fix_canonical_tags
+from src.modules.robots import fix_robots
 
 
-def run_engine(pages, clean_urls):
-    # 1. Analyze
+def run_engine(pages, clean_urls, domain):
     audit = generate_audit_report(pages, clean_urls)
 
-    # 2. Decide fixes
     plan = build_fix_plan(audit)
 
-    # 3. Apply fixes
-    fixed_urls = apply_fixes(clean_urls, plan)
+    context = {
+        "urls": clean_urls,
+        "domain": domain,
+        "pages": pages
+    }
 
-    # 4. Summary
-    fixes_applied = generate_fix_report(audit)
+    # Apply modular fixes
+    if "sitemap" in plan:
+        context["urls"] = fix_sitemap(context["urls"])
+
+    if "canonical" in plan:
+        context["urls"] = fix_canonical_tags(context)
+
+    if "robots" in plan:
+        fix_robots(context)
+
+    # Generic URL fixes
+    context["urls"] = fix_urls(context["urls"])
 
     return {
         "audit": audit,
         "plan": plan,
-        "fixed_urls": fixed_urls,
-        "fixes": fixes_applied
+        "fixed_urls": context["urls"]
     }
 
 
-# -------------------------
-# FIX PLANNER
-# -------------------------
 def build_fix_plan(audit):
     plan = []
 
     if audit["issues"]["duplicates"]:
-        plan.append("remove_duplicates")
+        plan.append("sitemap")
 
     if audit["issues"]["has_query_params"]:
-        plan.append("remove_query_params")
+        plan.append("sitemap")
 
     if audit["issues"]["not_https"]:
-        plan.append("force_https")
+        plan.append("sitemap")
 
-    if audit["issues"]["non_200"]:
-        plan.append("remove_broken")
+    # Future modules
+    plan.append("canonical")
+    plan.append("robots")
 
     return plan
-
-
-# -------------------------
-# FIX EXECUTOR
-# -------------------------
-def apply_fixes(urls, plan):
-    fixed = urls.copy()
-
-    if "remove_query_params" in plan or "force_https" in plan:
-        fixed = fix_urls(fixed)
-
-    if "remove_duplicates" in plan:
-        fixed = list(set(fixed))
-
-    # Remove broken URLs (basic logic)
-    if "remove_broken" in plan:
-        fixed = [u for u in fixed if not u.endswith("404")]
-
-    return fixed
