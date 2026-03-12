@@ -93,9 +93,11 @@ def generate(
 
         audit = engine_result["audit"]
         fixed_urls = engine_result["fixed_urls"]
-        meta_issues = engine_result["meta_issues"]
-        meta_fixes = engine_result["meta_fixes"]
         plan = engine_result["plan"]
+
+        meta_results = engine_result["modules"].get("meta", {})
+        meta_issues = meta_results.get("issues", [])
+        meta_fixes = meta_results.get("fixes", {})
 
         files = generate_sitemaps(fixed_urls, base_url=domain)
 
