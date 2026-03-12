@@ -1,95 +1,108 @@
 # src/modules/meta.py
 
 from bs4 import BeautifulSoup
-from collections import defaultdict
 
 
-def analyze_meta(pages):
-    issues = defaultdict(list)
+def run(context):
+    """
+    Standard module interface.
+    Receives context from engine and returns structured result.
+    """
 
-    for p in pages:
-        html = p.get("html", "")
-        url = p.get("url")
+    pages = context["pages"]
+
+    issues = {
+        "missing_title": [],
+        "missing_description": [],
+        "missing_h1": [],
+        "multiple_h1": []
+    }
+
+    fixes = {}
+
+    for page in pages:
+
+        html = page.get("html")
+        url = page.get("url")
 
         if not html:
             continue
 
         soup = BeautifulSoup(html, "lxml")
 
-        title = soup.find("title")
-        desc = soup.find("meta", attrs={"name": "description"})
-        h1 = soup.find("h1")
-
-        # Missing title
-        if not title or not title.text.strip():
-            issues["missing_title"].append(url)
-
-        # Missing description
-        if not desc or not desc.get("content", "").strip():
-            issues["missing_description"].append(url)
-
-        # Multiple H1
+        title_tag = soup.find("title")
+        desc_tag = soup.find("meta", attrs={"name": "description"})
         h1_tags = soup.find_all("h1")
+
+        # -----------------------------
+        # TITLE ANALYSIS
+        # -----------------------------
+        if not title_tag or not title_tag.text.strip():
+            issues["missing_title"].append(url)
+            title = generate_title(url, soup)
+        else:
+            title = title_tag.text.strip()
+
+        # -----------------------------
+        # DESCRIPTION ANALYSIS
+        # -----------------------------
+        if not desc_tag or not desc_tag.get("content"):
+            issues["missing_description"].append(url)
+            description = generate_description(soup)
+        else:
+            description = desc_tag.get("content")
+
+        # -----------------------------
+        # H1 ANALYSIS
+        # -----------------------------
+        if not h1_tags:
+            issues["missing_h1"].append(url)
+
         if len(h1_tags) > 1:
             issues["multiple_h1"].append(url)
 
-        # Missing H1
-        if not h1:
-            issues["missing_h1"].append(url)
-
-    return issues
-
-
-def generate_meta_tags(pages):
-    fixes = {}
-
-    for p in pages:
-        html = p.get("html", "")
-        url = p.get("url")
-
-        if not html:
-            continue
-
-        soup = BeautifulSoup(html, "lxml")
-
-        title = soup.find("title")
-        h1 = soup.find("h1")
-
-        # Generate title
-        if not title or not title.text.strip():
-            if h1:
-                new_title = h1.text.strip()
-            else:
-                new_title = generate_title_from_url(url)
-        else:
-            new_title = title.text.strip()
-
-        # Generate description
-        desc_tag = soup.find("meta", attrs={"name": "description"})
-        if not desc_tag or not desc_tag.get("content"):
-            desc = generate_description(soup)
-        else:
-            desc = desc_tag.get("content")
-
+        # -----------------------------
+        # FIX SUGGESTION
+        # -----------------------------
         fixes[url] = {
-            "title": new_title[:60],
-            "description": desc[:155]
+            "title": title[:60],
+            "description": description[:155]
         }
 
-    return fixes
+    return {
+        "issues": issues,
+        "fixes": fixes
+    }
 
 
-def generate_title_from_url(url):
+# ------------------------------------
+# TITLE GENERATOR
+# ------------------------------------
+def generate_title(url, soup):
+
+    h1 = soup.find("h1")
+
+    if h1 and h1.text.strip():
+        return h1.text.strip()
+
     slug = url.rstrip("/").split("/")[-1]
     slug = slug.replace("-", " ").replace("_", " ")
-    return slug.title()
+
+    if slug:
+        return slug.title()
+
+    return "Untitled Page"
 
 
+# ------------------------------------
+# DESCRIPTION GENERATOR
+# ------------------------------------
 def generate_description(soup):
-    p = soup.find("p")
 
-    if p and p.text:
-        text = p.text.strip()
+    paragraph = soup.find("p")
+
+    if paragraph and paragraph.text.strip():
+        text = paragraph.text.strip()
         return text[:155]
 
     return "Learn more about this page."
