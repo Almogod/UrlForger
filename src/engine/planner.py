@@ -21,5 +21,6 @@ def build_fix_plan(audit):
     plan.append("crawl_budget")
     plan.append("canonical")
     plan.append("robots")
+    plan.append("schema")
 
     return plan
