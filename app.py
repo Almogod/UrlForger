@@ -107,6 +107,11 @@ def generate(
         crawl_budget_issues = crawl_budget_results.get("issues", {})
         crawl_budget_suggestions = crawl_budget_results.get("suggestions", [])
 
+        #schema injector
+        schema_results = engine_result["modules"].get("schema", {})
+        schema_issues = schema_results.get("issues", [])
+        schema_generated = schema_results.get("schemas", {})
+
         files = generate_sitemaps(fixed_urls, base_url=domain)
 
         # 🔥 DEBUG PRINT
