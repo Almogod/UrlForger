@@ -18,7 +18,7 @@ def build_fix_plan(audit):
 
     # internal linking should always run if graph exists
     plan.append("internal_links")
-
+    plan.append("crawl_budget")
     plan.append("canonical")
     plan.append("robots")
 
