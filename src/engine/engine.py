@@ -1,6 +1,18 @@
+# src/engine/engine.py
+
+from src.services.audit import generate_audit_report
+from src.engine.planner import build_fix_plan
+from src.engine.registry import MODULE_REGISTRY
+from src.engine.fix_strategy import build_fix_strategy
+from src.engine.fix_executor import execute_fixes
+from src.services.seo_score import compute_score
+from src.utils.logger import logger
+
+
 def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
     """
     Core SEO repair engine.
+    Executes analysis modules, builds fix strategy, and generates actionable fixes.
     """
 
     # -----------------------------
@@ -13,16 +25,22 @@ def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
         "graph": graph
     }
 
+    logger.info("SEO engine started")
+
     # -----------------------------
     # RUN AUDIT
     # -----------------------------
-    if progress_callback: progress_callback("Running site audit...")
+    if progress_callback:
+        progress_callback("Running site audit...")
+
     audit = generate_audit_report(pages, clean_urls)
 
     # -----------------------------
     # BUILD EXECUTION PLAN
     # -----------------------------
-    if progress_callback: progress_callback("Building execution plan...")
+    if progress_callback:
+        progress_callback("Building execution plan...")
+
     plan = build_fix_plan(audit)
 
     results = {
@@ -36,41 +54,60 @@ def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
     # EXECUTE MODULES
     # -----------------------------
     for module_name in plan:
+
         module = MODULE_REGISTRY.get(module_name)
+
         if not module:
             logger.warning("Module %s not found in registry", module_name)
             continue
 
         logger.info("Running module: %s", module_name)
-        if progress_callback: progress_callback(f"Running module: {module_name}...")
+
+        if progress_callback:
+            progress_callback(f"Running module: {module_name}...")
 
         try:
             module_result = module.run(context)
+
             results["modules"][module_name] = module_result
 
-            if "urls" in module_result:
+            # modules can update normalized URLs
+            if isinstance(module_result, dict) and "urls" in module_result:
                 context["urls"] = module_result["urls"]
+
         except Exception as e:
-            logger.error("Error running module %s: %s", module_name, e)
-            results["modules"][module_name] = {"error": str(e)}
+
+            logger.error("Error running module %s: %s", module_name, str(e))
+
+            results["modules"][module_name] = {
+                "error": str(e)
+            }
 
     # -----------------------------
-    # FIX STRATEGY & EXECUTION
+    # FIX STRATEGY
     # -----------------------------
-    if progress_callback: progress_callback("Finalizing fix strategy...")
-    
-    # Generate strategy based on module results
+    if progress_callback:
+        progress_callback("Building fix strategy...")
+
     strategy = build_fix_strategy(results)
-    
-    # Execute the final fixes
+
+    # -----------------------------
+    # EXECUTE FIXES
+    # -----------------------------
+    if progress_callback:
+        progress_callback("Generating automated fixes...")
+
     actions = execute_fixes(context, results["modules"], strategy)
 
-    # Update results object
-    results["actions"] = actions
     results["strategy"] = strategy
+    results["actions"] = actions
     results["fixed_urls"] = context["urls"]
 
-    # Compute final SEO score
+    # -----------------------------
+    # COMPUTE SEO SCORE
+    # -----------------------------
     results["seo_score"] = compute_score(results)
+
+    logger.info("SEO engine finished")
 
     return results
