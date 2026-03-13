@@ -89,8 +89,7 @@ def generate(
 
         clean_urls = build_clean_urls(pages, fix_canonical)
 
-        # Updated: Pass domain and unpack new meta result keys
-        engine_result = run_engine(pages, clean_urls, domain)
+        engine_result = run_engine(pages, clean_urls, domain, graph)
 
         audit = engine_result["audit"]
         fixed_urls = engine_result["fixed_urls"]
