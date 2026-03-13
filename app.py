@@ -151,6 +151,11 @@ def generate(
         competitor_keywords = keyword_results.get("competitor_keywords", {})
         keyword_gap = keyword_results.get("keyword_gap", {})
 
+        #Actions
+        actions = engine_result.get("actions", [])
+        strategy = engine_result.get("strategy", [])
+        seo_score = engine_result.get("seo_score", 0)
+
         
         if task_id: progress_store[task_id] = "Writing output files..."
         time.sleep(1.5)
