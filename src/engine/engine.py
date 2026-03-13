@@ -1,22 +1,6 @@
-# src/engine/engine.py
-import logging
-
-from src.services.audit import generate_audit_report
-from src.engine.planner import build_fix_plan
-from src.engine.registry import MODULE_REGISTRY
-
-# Initialize logger
-logger = logging.getLogger(__name__)
-
 def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
     """
     Core SEO repair engine.
-
-    Responsibilities:
-    - run site audit
-    - build execution plan
-    - execute fix modules
-    - aggregate results
     """
 
     # -----------------------------
@@ -52,36 +36,41 @@ def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
     # EXECUTE MODULES
     # -----------------------------
     for module_name in plan:
-        
         module = MODULE_REGISTRY.get(module_name)
-
         if not module:
             logger.warning("Module %s not found in registry", module_name)
             continue
 
-        # Added logging here
         logger.info("Running module: %s", module_name)
         if progress_callback: progress_callback(f"Running module: {module_name}...")
 
         try:
             module_result = module.run(context)
-
-            # store module result
             results["modules"][module_name] = module_result
 
-            # modules may modify URLs
             if "urls" in module_result:
                 context["urls"] = module_result["urls"]
-
         except Exception as e:
             logger.error("Error running module %s: %s", module_name, e)
-            results["modules"][module_name] = {
-                "error": str(e)
-            }
+            results["modules"][module_name] = {"error": str(e)}
 
     # -----------------------------
-    # FINAL URL SET
+    # FIX STRATEGY & EXECUTION
     # -----------------------------
+    if progress_callback: progress_callback("Finalizing fix strategy...")
+    
+    # Generate strategy based on module results
+    strategy = build_fix_strategy(results)
+    
+    # Execute the final fixes
+    actions = execute_fixes(context, results["modules"], strategy)
+
+    # Update results object
+    results["actions"] = actions
+    results["strategy"] = strategy
     results["fixed_urls"] = context["urls"]
+
+    # Compute final SEO score
+    results["seo_score"] = compute_score(results)
 
     return results
