@@ -1,4 +1,4 @@
-from src.modules import sitemap, canonical, robots, meta, internal_links
+from src.modules import sitemap, canonical, robots, meta, internal_links, schema
 
 MODULE_REGISTRY = {
     "sitemap": sitemap,
@@ -6,5 +6,6 @@ MODULE_REGISTRY = {
     "robots": robots,
     "meta": meta,
     "internal_links": internal_links,
-    "crawl_budget": crawl_budget
+    "crawl_budget": crawl_budget,
+    "schema": schema
 }
