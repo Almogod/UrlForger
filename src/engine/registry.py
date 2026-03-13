@@ -1,8 +1,9 @@
-from src.modules import sitemap, canonical, robots, meta
+from src.modules import sitemap, canonical, robots, meta, internal_links
 
 MODULE_REGISTRY = {
     "sitemap": sitemap,
     "canonical": canonical,
     "robots": robots,
-    "meta": meta
+    "meta": meta,
+    "internal_links": internal_links
 }
