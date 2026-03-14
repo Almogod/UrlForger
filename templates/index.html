@@ -944,9 +944,12 @@
                 if (!res.ok) {
                     clearInterval(pollInterval);
                     overlay.classList.add('hidden');
-                    alert("Submission failed");
+                    const errData = await res.json().catch(() => ({}));
+                    const msg = errData.error || errData.message || (errData.detail ? JSON.stringify(errData.detail) : "Unknown error");
+                    alert("Submission failed: " + msg);
                     submitBtn.disabled = false;
                     submitBtn.style.opacity = '1';
+                    submitBtn.innerText = 'Retry';
                 }
             } catch (err) {
                 clearInterval(pollInterval);

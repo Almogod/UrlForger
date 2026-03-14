@@ -36,10 +36,12 @@ class TaskStore:
     def _write(self, data):
         # Atomic write pattern for Windows
         dir_name = os.path.dirname(self.file_path)
-        if not os.path.exists(dir_name):
+        if dir_name and not os.path.exists(dir_name):
             os.makedirs(dir_name, exist_ok=True)
             
-        fd, temp_path = tempfile.mkstemp(dir=dir_name, suffix=".tmp")
+        # Use current dir if no directory is specified
+        temp_dir = dir_name if dir_name else "."
+        fd, temp_path = tempfile.mkstemp(dir=temp_dir, suffix=".tmp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)

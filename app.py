@@ -1,31 +1,41 @@
 import os
+import sys
+import asyncio
 import time
 import uuid
 import concurrent.futures
-import asyncio
-import sys
-from fastapi import FastAPI, Form, BackgroundTasks
+from typing import Optional, Union
+
+from fastapi import FastAPI, Form, BackgroundTasks, Request, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.requests import Request
-
-if sys.platform == 'win32':
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 # Core modules
+from src.config import config
 from src.crawler_engine.crawler import crawl
 from src.crawler_engine.js_crawler import crawl_js_sync
 from src.utils.url_utils import build_clean_urls
 from src.services.task_store import task_store
-from src.config import config
 from src.services.sitemap_parser import get_sitemap_urls
 from src.services.generator import generate_sitemaps
 from src.engine.engine import run_engine
 from src.automation.automation_engine import run_automation
 from src.plugin.plugin_runner import run_plugin
 
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 app = FastAPI(title=config.APP_NAME)
 templates = Jinja2Templates(directory="templates")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "type": type(exc).__name__}
+    )
 
 @app.get("/progress")
 def get_progress(task_id: str):
@@ -99,11 +109,11 @@ def home(request: Request):
 
 @app.post("/generate")
 def generate(
+    background_tasks: BackgroundTasks,
     domain: str = Form(...),
     limit: int = Form(50),
     use_js: bool = Form(False),
-    task_id: str = Form(None),
-    background_tasks: BackgroundTasks = None
+    task_id: Optional[str] = Form(None)
 ):
     if not task_id:
         task_id = str(uuid.uuid4())
@@ -127,10 +137,10 @@ def run_plugin_task(
     site_url: str = Form(...),
     competitors: str = Form(""),
     limit: int = Form(100),
-    openai_key: str = Form(None),
-    gemini_key: str = Form(None),
-    ollama_host: str = Form(None),
-    task_id: str = Form(None)
+    openai_key: Optional[str] = Form(None),
+    gemini_key: Optional[str] = Form(None),
+    ollama_host: Optional[str] = Form(None),
+    task_id: Optional[str] = Form(None)
 ):
     if not task_id:
         task_id = str(uuid.uuid4())[:10]
