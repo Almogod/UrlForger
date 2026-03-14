@@ -5,28 +5,10 @@ from src.services.normalizer import normalize
 from src.services.filter import is_valid
 from src.services.generator import generate_sitemaps
 from src.crawler_engine.js_crawler import crawl_js_sync
+from src.utils.url_utils import build_clean_urls
 
 
-def build_clean_urls(pages, fix_canonical=False):
-    seen = set()
-    clean = [] 
-    
-    for p in pages:
-        meta = extract_metadata(p)
 
-        if not is_valid(meta):
-            continue
-
-        chosen = meta["canonical"] if (fix_canonical and meta.get("canonical")) else meta["url"]
-        normalized = normalize(chosen)
-
-        if normalized in seen:
-            continue
-
-        seen.add(normalized)
-        clean.append(normalized) 
-        
-    return clean 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sitemap Fixer Tool")
@@ -46,7 +28,7 @@ if __name__ == "__main__":
         pages = crawl_js_sync(args.domain, limit=args.limit)
     else:
         print("Using standard crawler...")
-        pages = crawl(args.domain, limit=args.limit)
+        pages, graph = crawl(args.domain, limit=args.limit)
 
     print("Processing...")
     clean_urls = build_clean_urls(pages, fix_canonical=args.fix_canonical)

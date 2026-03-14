@@ -2,3 +2,9 @@ httpx
 beautifulsoup4
 lxml
 tldextract
+fastapi
+uvicorn
+jinja2
+python-multipart
+playwright
+pydantic-settings

@@ -370,9 +370,38 @@
             100% { transform: rotate(360deg); } 
         }
 
-        /* Hide elements dynamically */
-        .hidden {
-            display: none !important;
+        /* Tabs UI */
+        .tabs-header {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            background: var(--card-border);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
     </style>
@@ -390,29 +419,68 @@
 
     <!-- FORM CARD -->
     <div class="card result-card" id="form-card">
-        <form id="generate-form" action="/generate" method="post">
-            <div class="form-group">
-                <label>Target Domain</label>
-                <input type="text" name="domain" placeholder="https://example.com" required>
-            </div>
+        
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('standard-tab')">Standard Analysis</button>
+            <button class="tab-btn" onclick="switchTab('plugin-tab')">Autonomous Plugin</button>
+        </div>
 
-            <div class="form-group">
-                <label>Crawl Limit (Pages)</label>
-                <input type="number" name="limit" value="50">
-            </div>
+        <!-- TAB 1: STANDARD -->
+        <div id="standard-tab" class="tab-content active">
+            <form id="generate-form" action="/generate" method="post">
+                <div class="form-group">
+                    <label>Target Domain</label>
+                    <input type="text" name="domain" placeholder="https://example.com" required>
+                </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="use_js" name="use_js">
-                <label for="use_js">Enable JS Rendering</label>
-            </div>
+                <div class="form-group">
+                    <label>Crawl Limit (Pages)</label>
+                    <input type="number" name="limit" value="50">
+                </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="fix_canonical" name="fix_canonical">
-                <label for="fix_canonical">Auto-Fix Canonical URLs</label>
-            </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="use_js" name="use_js">
+                    <label for="use_js">Enable JS Rendering</label>
+                </div>
 
-            <button type="submit" class="submit-btn" id="submit-btn">Run Engine</button>
-        </form>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="fix_canonical" name="fix_canonical">
+                    <label for="fix_canonical">Auto-Fix Canonical URLs</label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">Run Engine</button>
+            </form>
+        </div>
+
+        <!-- TAB 2: AUTONOMOUS PLUGIN -->
+        <div id="plugin-tab" class="tab-content">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                Crawl, analyze, fix SEO loopholes, generate new content for keyword gaps, and deploy back to site.
+            </p>
+            <form id="plugin-form" action="/plugin/run" method="post">
+                <div class="form-group">
+                    <label>Site URL</label>
+                    <input type="text" name="domain" placeholder="https://example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Competitor Domains (comma separated)</label>
+                    <input type="text" name="competitors" placeholder="competitor1.com, competitor2.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Crawl Limit</label>
+                    <input type="number" name="limit" value="100">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="plugin_use_js" name="use_js">
+                    <label for="plugin_use_js">Enable JS Rendering</label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="plugin-submit-btn">Run Autonomous Plugin</button>
+            </form>
+        </div>
 
         <!-- LOADING UI INLINE -->
         <div id="loading-overlay" class="hidden" style="margin-top: 30px; border-top: 1px solid var(--card-border); padding-top: 25px;">
@@ -424,28 +492,58 @@
     </div>
 
     <!-- ERROR STATE -->
-    {% if error %}
-    <div class="card result-card">
-        <h3 style="color: var(--error-color);">Error Occurred</h3>
-        <p style="color: var(--text-muted);">{{error}}</p>
+    {% endif %}
+    
+    <!-- RESULTS (Conditional Rendering) -->
+    {% if audit is defined or seo_score is defined or is_plugin %}
+    
+    <!-- PLUGIN REPORT SUMMARY -->
+    {% if is_plugin %}
+    <div class="card result-card" style="border-left: 5px solid var(--primary-color);">
+        <h2 class="section-title">Autonomous Plugin Report</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+            <div>
+                <p><b>Fixes Applied:</b> {{plugin_report.fixes_applied | length}}</p>
+                <p><b>Pages Generated:</b> {{plugin_report.pages_generated | length}}</p>
+            </div>
+            <div>
+                <p><b>Started At:</b> {{plugin_report.started_at}}</p>
+                <p><b>Status:</b> <span class="badge" style="background: var(--primary-color); color: white;">Success</span></p>
+            </div>
+        </div>
+
+        {% if plugin_report.pages_generated %}
+        <h3>New Pages Created</h3>
+        <ul>
+            {% for page in plugin_report.pages_generated %}
+                <li><b>{{page.keyword}}:</b> <a href="/{{page.slug}}" target="_blank">{{page.title}}</a> ({{page.word_count}} words)</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if plugin_report.errors %}
+        <h3 style="color: var(--error-color); margin-top: 20px;">Execution Errors</h3>
+        <ul style="color: var(--text-muted); font-size: 0.85rem;">
+            {% for err in plugin_report.errors %}
+                <li>{{err.error}} ({{err.url or err.keyword}})</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </div>
     {% endif %}
 
-    <!-- RESULTS (Conditional Rendering) -->
-    {% if audit is defined or seo_score is defined %}
-    
     <!-- OVERVIEW & SCORE CARD -->
     <div class="card result-card">
-        <h2 class="section-title">Engine Overview</h2>
+        <h2 class="section-title">SEO Health Overview</h2>
         
         <div class="score-display">
-            {% set display_score = seo_score if seo_score else audit.score %}
+            {% set display_score = seo_score %}
             <div class="score-circle 
                 {% if display_score >= 80 %}good
                 {% elif display_score >= 50 %}average
                 {% else %}bad
                 {% endif %}">
-                {{display_score}}
+                {{display_score|int}}
             </div>
             <div class="score-text">
                 {% if display_score >= 80 %}
@@ -455,28 +553,96 @@
                 {% else %}
                     <h3 style="color: #ef4444;">Poor Health</h3>
                 {% endif %}
-                <p>{{count}} URLs successfully crawled and analyzed.</p>
+                <p>Site analysis completed. Score represents overall SEO optimization level.</p>
             </div>
         </div>
 
-        <!-- Fix Strategy AI Output -->
-        {% if strategy %}
+        {% if engine_result and engine_result.strategy %}
         <div style="margin-top: 25px;">
-            <h3>AI Fix Strategy</h3>
-            <p style="color: var(--text-muted); line-height: 1.7;">{{strategy}}</p>
+            <h3>AI Strategy</h3>
+            <p style="color: var(--text-muted); line-height: 1.7;">{{engine_result.strategy}}</p>
         </div>
         {% endif %}
+    </div>
 
-        <!-- General Audit Suggestions -->
-        {% if audit and audit.suggestions %}
-        <div style="margin-top: 25px;">
-            <h3>Priority Recommendations</h3>
-            <ul>
-                {% for suggestion in audit.suggestions %}
-                    <li>{{suggestion}}</li>
-                {% endfor %}
-            </ul>
+    <!-- DEEP ANALYSIS MODULES -->
+    <div class="card result-card">
+        <h2 class="section-title">Deep Audit Results</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <!-- Column 1 -->
+            <div>
+                <!-- Meta & Headings -->
+                {% if meta_issues or heading_issues %}
+                <h3 style="margin-top: 0;">Content Structure</h3>
+                <ul style="font-size: 0.9rem;">
+                    {% for issue in meta_issues %} <li style="color: var(--error-color);">{{issue}}</li> {% endfor %}
+                    {% for issue in heading_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Images -->
+                {% if image_issues %}
+                <h3 style="margin-top: 20px;">Media Optimization</h3>
+                <ul style="font-size: 0.9rem;">
+                    {% for issue in image_issues %} <li style="color: var(--error-color);">{{issue}}</li> {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Speed & Performance -->
+                {% if speed_issues or core_issues %}
+                <h3 style="margin-top: 20px;">Performance</h3>
+                <ul style="font-size: 0.9rem;">
+                    {% for issue in speed_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
+                    {% for issue in core_issues %} <li style="color: var(--error-color);">{{issue}}</li> {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Column 2 -->
+            <div>
+                <!-- Mobile & Experience -->
+                {% if mobile_issues or experience_issues %}
+                <h3 style="margin-top: 0;">User Experience</h3>
+                <ul style="font-size: 0.9rem;">
+                    {% for issue in mobile_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
+                    {% for issue in experience_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Technical SEO -->
+                {% if schema_issues or hreflang_issues %}
+                <h3 style="margin-top: 20px;">Semantic & Technical</h3>
+                <ul style="font-size: 0.9rem;">
+                    {% for issue in schema_issues %} <li style="color: var(--error-color);">{{issue.issue}}: {{issue.schema_type}}</li> {% endfor %}
+                    {% for issue in hreflang_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Links & Quality -->
+                {% if quality_issues or link_issues %}
+                <h3 style="margin-top: 20px;">Quality & Links</h3>
+                <ul style="font-size: 0.9rem;">
+                    {% for issue in quality_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
         </div>
+
+        <!-- Keyword Gap -->
+        {% if site_keywords or keyword_gap %}
+        <h3 style="margin-top: 30px; border-top: 1px solid var(--card-border); padding-top: 20px;">Content & Keyword Gaps</h3>
+        <p><b>Identified Keywords:</b> 
+            <span style="color: var(--primary-color); font-weight: 500;">{{site_keywords | join(", ")}}</span>
+        </p>
+        {% if keyword_gap %}
+        <p style="margin-top: 10px;"><b>Gaps vs Competitors:</b></p>
+        <ul style="font-size: 0.9rem;">
+            {% for competitor, gaps in keyword_gap.items() %}
+                <li><b>{{competitor}}:</b> <span style="color: var(--text-muted);">{{gaps | join(", ")}}</span></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -484,101 +650,12 @@
     {% if files %}
     <div class="card result-card">
         <h2 class="section-title">Generated Exports</h2>
-        <p style="color: var(--text-muted);">The following optimized sitemap files have been generated based on the engine's strategy.</p>
         <ul>
             {% for file in files %}
                 <li><a href="/download?file={{file}}" target="_blank">{{file}}</a> <span class="badge">XML</span></li>
             {% endfor %}
         </ul>
     </div>
-    {% endif %}
-
-    <!-- URL ISSUES & FIXES -->
-    {% if audit and audit.issues %}
-    <div class="card result-card">
-        <h2 class="section-title">URL Inspection</h2>
-        
-        {% for issue, urls in audit.issues.items() %}
-            {% if urls|length > 0 %}
-            <div style="margin-top: 25px;">
-                <p><b>{{issue.replace("_", " ").title()}}</b> <span class="badge">{{urls|length}} pages</span></p>
-                <ul style="color: var(--text-muted); margin-top: 8px;">
-                    {% for url in urls %}
-                        <li>{{url}}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-        {% endfor %}
-
-        {% if fixes %}
-            <h3 style="margin-top: 35px; border-top: 1px solid var(--card-border); padding-top: 25px;">Applied Automated Fixes</h3>
-            <ul style="color: var(--text-muted);">
-                {% for fix in fixes %}
-                    <li>{{fix}}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- EXTENDED MODULES MODULES -->
-    {% if strategy or actions or image_issues or core_issues or keyword_gap %}
-    <div class="card result-card">
-        <h2 class="section-title">Deep Analysis Modules</h2>
-
-        <!-- Core Web Vitals -->
-        {% if core_issues or core_suggestions %}
-        <h3 style="margin-top: 20px;">Core Web Vitals</h3>
-        <ul>
-            {% for issue in core_issues %}
-                <li style="color: var(--error-color);">{{issue}}</li>
-            {% endfor %}
-            {% for sug in core_suggestions %}
-                <li style="color: var(--primary-color);">{{sug}}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-
-        <!-- Image SEO -->
-        {% if image_issues or image_fixes %}
-        <h3 style="margin-top: 25px;">Image SEO</h3>
-        {% if image_issues %}
-            <ul>
-            {% for issue in image_issues %}
-                <li style="color: var(--error-color);">{{issue}}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-        {% if image_fixes %}
-            <p><b>Applied Fixes:</b></p>
-            <ul style="color: var(--text-muted);">
-                {% for fix in image_fixes %}
-                    <li>{{fix}}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        {% endif %}
-
-        <!-- Keyword Gap -->
-        {% if site_keywords or keyword_gap %}
-        <h3 style="margin-top: 25px;">Content & Keyword Gaps</h3>
-        <p><b>Identified Site Keywords:</b> 
-            <span style="color: var(--primary-color); font-weight: 500;">{{site_keywords | join(", ")}}</span>
-        </p>
-        {% if keyword_gap %}
-        <p style="margin-top: 15px;"><b>Keyword Gaps vs Competitors:</b></p>
-        <ul>
-            {% for competitor, gaps in keyword_gap.items() %}
-                <li><b>{{competitor}}:</b> <span style="color: var(--text-muted);">{{gaps | join(", ")}}</span></li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endif %}
-
-    </div>
-    {% endif %}
-
     {% endif %}
 </div>
 
@@ -639,37 +716,43 @@
         document.body.style.setProperty("--hover-glow", document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(52, 211, 153, 0.08)' : 'rgba(16, 185, 129, 0.15)');
     });
 
+    // --- Tab Switching ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
     // --- Form Submission & Polling ---
-    const form = document.getElementById('generate-form');
-    if (form) {
+    function handleFormSubmit(formId, endpoint) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Hide old results if any
+            // Hide old results
             document.querySelectorAll('.result-card').forEach(el => {
-                if (el.id !== 'form-card') {
-                    el.style.display = 'none';
-                }
+                if (el.id !== 'form-card') el.style.display = 'none';
             });
             
-            // Show inline loading block within form card
             const overlay = document.getElementById('loading-overlay');
-            const submitBtn = document.getElementById('submit-btn');
+            const submitBtn = form.querySelector('.submit-btn');
             overlay.classList.remove('hidden');
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.5';
-            submitBtn.innerText = 'Analyzing...';
+            submitBtn.innerText = 'Processing...';
             
-            // Create random task_id to track progress
             const taskId = Math.random().toString(36).substring(2, 15);
             const formData = new FormData(this);
             formData.append('task_id', taskId);
             
             const stepsContainer = document.getElementById('thinking-steps');
-            stepsContainer.innerHTML = ''; // reset steps
+            stepsContainer.innerHTML = '';
             let knownSteps = [];
             
-            // Start polling backend status
             const pollInterval = setInterval(async () => {
                 try {
                     const res = await fetch('/progress?task_id=' + taskId);
@@ -677,50 +760,54 @@
                         const data = await res.json();
                         const status = data.status || "Starting...";
                         
+                        if (data.state === "error") {
+                            clearInterval(pollInterval);
+                            stepsContainer.lastElementChild.innerHTML = `<span style="color: var(--error-color);">✕</span> ${status}`;
+                            submitBtn.disabled = false;
+                            submitBtn.style.opacity = '1';
+                            submitBtn.innerText = 'Retry';
+                            return;
+                        }
+
                         if (!knownSteps.includes(status)) {
-                            // Mark previous step as done
                             if (knownSteps.length > 0) {
-                                const lastLi = stepsContainer.lastElementChild;
-                                lastLi.innerHTML = `<span style="color: var(--primary-color);">✓</span> ${knownSteps[knownSteps.length - 1]}`;
+                                stepsContainer.lastElementChild.innerHTML = `<span style="color: var(--primary-color);">✓</span> ${knownSteps[knownSteps.length - 1]}`;
                             }
-                            
-                            // Add new step
                             knownSteps.push(status);
                             const newLi = document.createElement('li');
                             newLi.innerHTML = `<span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span> ${status}`;
                             stepsContainer.appendChild(newLi);
                         }
-                    }
-                } catch (err) {
-                    console.error("Polling error:", err);
-                }
-            }, 500);
 
-            // Submit form to generate
+                        if (data.state === "completed") {
+                            clearInterval(pollInterval);
+                            window.location.href = '/results?task_id=' + taskId;
+                        }
+                    }
+                } catch (err) {}
+            }, 800);
+
             try {
-                const res = await fetch('/generate', { method: 'POST', body: formData });
-                clearInterval(pollInterval);
-                
-                if (res.ok) {
-                    const html = await res.text();
-                    document.open();
-                    document.write(html);
-                    document.close();
-                } else {
-                    stepsContainer.lastElementChild.innerHTML = `<span style="color: var(--error-color);">✕</span> Error occurred during Generation`;
+                const res = await fetch(endpoint, { method: 'POST', body: formData });
+                if (!res.ok) {
+                    clearInterval(pollInterval);
+                    overlay.classList.add('hidden');
+                    alert("Submission failed");
                     submitBtn.disabled = false;
                     submitBtn.style.opacity = '1';
-                    submitBtn.innerText = 'Run Engine';
                 }
             } catch (err) {
                 clearInterval(pollInterval);
-                stepsContainer.lastElementChild.innerHTML = `<span style="color: var(--error-color);">✕</span> Network Error`;
+                overlay.classList.add('hidden');
+                alert("Network error");
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = '1';
-                submitBtn.innerText = 'Run Engine';
             }
         });
     }
+
+    handleFormSubmit('generate-form', '/generate');
+    handleFormSubmit('plugin-form', '/plugin/run');
 </script>
 </body>
 </html>

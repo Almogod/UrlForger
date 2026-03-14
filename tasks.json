@@ -1,0 +1,1518 @@
+{
+    "test234": {
+        "status_msg": "Error: name 'generate_sitemaps' is not defined",
+        "status": "error",
+        "error": "name 'generate_sitemaps' is not defined"
+    },
+    "test456": {
+        "status_msg": "Error: name 'generate_sitemaps' is not defined",
+        "status": "error",
+        "error": "name 'generate_sitemaps' is not defined"
+    },
+    "test789": {
+        "status_msg": "Completed",
+        "status": "completed",
+        "results": {
+            "files": [
+                "sitemap.xml"
+            ],
+            "count": 1,
+            "engine_result": {
+                "audit": {
+                    "total_pages_crawled": 2,
+                    "total_clean_urls": 1,
+                    "issues": {
+                        "excluded_from_sitemap": [
+                            "https://scrapeme.live/shop/",
+                            "https://scrapeme.live/shop/#site-navigation"
+                        ]
+                    },
+                    "score": 90,
+                    "suggestions": [
+                        "Ensure all important pages are included in the sitemap."
+                    ]
+                },
+                "plan": [
+                    "internal_links",
+                    "crawl_budget",
+                    "canonical",
+                    "robots",
+                    "schema",
+                    "image_seo",
+                    "core_web_vitals",
+                    "keyword_gap"
+                ],
+                "modules": {
+                    "internal_links": {
+                        "issues": {
+                            "orphan_pages": [],
+                            "low_internal_links": [
+                                "https://scrapeme.live/shop/"
+                            ]
+                        },
+                        "suggestions": {
+                            "https://scrapeme.live/shop/": [
+                                {
+                                    "from": "https://scrapeme.live/shop/#site-navigation",
+                                    "to": "https://scrapeme.live/shop/"
+                                },
+                                {
+                                    "from": "https://scrapeme.live/shop/#content",
+                                    "to": "https://scrapeme.live/shop/"
+                                },
+                                {
+                                    "from": "https://scrapeme.live/",
+                                    "to": "https://scrapeme.live/shop/"
+                                },
+                                {
+                                    "from": "https://scrapeme.live",
+                                    "to": "https://scrapeme.live/shop/"
+                                },
+                                {
+                                    "from": "https://scrapeme.live/shop/page/2/",
+                                    "to": "https://scrapeme.live/shop/"
+                                }
+                            ]
+                        }
+                    },
+                    "crawl_budget": {
+                        "issues": {
+                            "deep_pages": [],
+                            "wasted_crawl_budget": []
+                        },
+                        "suggestions": []
+                    },
+                    "canonical": {
+                        "urls": [
+                            "https://scrapeme.live/shop"
+                        ]
+                    },
+                    "robots": {
+                        "status": "success"
+                    },
+                    "schema": {
+                        "issues": [],
+                        "schemas": {}
+                    },
+                    "image_seo": {
+                        "issues": [
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "missing_alt",
+                                "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png"
+                            }
+                        ],
+                        "fixes": {
+                            "https://scrapeme.live/shop/": [
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "001 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "002 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "003 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "004 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "005 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "006 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "007 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "008 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "009 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "010 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "011 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "012 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "013 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "014 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "015 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "016 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                }
+                            ],
+                            "https://scrapeme.live/shop/#site-navigation": [
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "001 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "002 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "003 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "004 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "005 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "006 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "007 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "008 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "009 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "010 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "011 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "012 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "013 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "014 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "015 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                                    "fix": "add_alt",
+                                    "value": "016 350X350"
+                                },
+                                {
+                                    "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                                    "fix": "add_lazy_loading",
+                                    "value": "loading='lazy'"
+                                }
+                            ]
+                        }
+                    },
+                    "core_web_vitals": {
+                        "issues": [
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "render_blocking_css"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-includes/js/jquery/jquery.js?ver=1.12.4"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/epl.js?ver=3.2.2"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/jquery-front-scripts.js?ver=3.2.2"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/bbpress/templates/default/js/editor.js?ver=2.5.14-6684"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/add-to-cart.min.js?ver=3.4.8"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/jquery-blockui/jquery.blockUI.min.js?ver=2.70"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/js-cookie/js.cookie.min.js?ver=2.1.4"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=3.4.8"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/cart-fragments.min.js?ver=3.4.8"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/navigation.min.js?ver=2.3.3"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/skip-link-focus-fix.min.js?ver=20130115"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/woocommerce/header-cart.min.js?ver=2.3.3"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-includes/js/wp-embed.min.js?ver=4.9.26"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "render_blocking_css"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-includes/js/jquery/jquery.js?ver=1.12.4"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/epl.js?ver=3.2.2"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/jquery-front-scripts.js?ver=3.2.2"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/bbpress/templates/default/js/editor.js?ver=2.5.14-6684"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/add-to-cart.min.js?ver=3.4.8"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/jquery-blockui/jquery.blockUI.min.js?ver=2.70"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/js-cookie/js.cookie.min.js?ver=2.1.4"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=3.4.8"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/cart-fragments.min.js?ver=3.4.8"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/navigation.min.js?ver=2.3.3"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/skip-link-focus-fix.min.js?ver=20130115"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/woocommerce/header-cart.min.js?ver=2.3.3"
+                            },
+                            {
+                                "url": "https://scrapeme.live/shop/#site-navigation",
+                                "issue": "blocking_js",
+                                "script": "https://scrapeme.live/wp-includes/js/wp-embed.min.js?ver=4.9.26"
+                            }
+                        ],
+                        "suggestions": {
+                            "https://scrapeme.live/shop/": [
+                                {
+                                    "type": "optimize_css",
+                                    "action": "inline_critical_css_or_defer"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-includes/js/jquery/jquery.js?ver=1.12.4"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/epl.js?ver=3.2.2"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/jquery-front-scripts.js?ver=3.2.2"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/bbpress/templates/default/js/editor.js?ver=2.5.14-6684"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/add-to-cart.min.js?ver=3.4.8"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/jquery-blockui/jquery.blockUI.min.js?ver=2.70"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/js-cookie/js.cookie.min.js?ver=2.1.4"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=3.4.8"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/cart-fragments.min.js?ver=3.4.8"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/navigation.min.js?ver=2.3.3"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/skip-link-focus-fix.min.js?ver=20130115"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/woocommerce/header-cart.min.js?ver=2.3.3"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-includes/js/wp-embed.min.js?ver=4.9.26"
+                                }
+                            ],
+                            "https://scrapeme.live/shop/#site-navigation": [
+                                {
+                                    "type": "optimize_css",
+                                    "action": "inline_critical_css_or_defer"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-includes/js/jquery/jquery.js?ver=1.12.4"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/epl.js?ver=3.2.2"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/easy-property-listings/lib/assets/js/jquery-front-scripts.js?ver=3.2.2"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/bbpress/templates/default/js/editor.js?ver=2.5.14-6684"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/add-to-cart.min.js?ver=3.4.8"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/jquery-blockui/jquery.blockUI.min.js?ver=2.70"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/js-cookie/js.cookie.min.js?ver=2.1.4"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=3.4.8"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/plugins/woocommerce/assets/js/frontend/cart-fragments.min.js?ver=3.4.8"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/navigation.min.js?ver=2.3.3"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/skip-link-focus-fix.min.js?ver=20130115"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-content/themes/storefront/assets/js/woocommerce/header-cart.min.js?ver=2.3.3"
+                                },
+                                {
+                                    "type": "defer_script",
+                                    "script": "https://scrapeme.live/wp-includes/js/wp-embed.min.js?ver=4.9.26"
+                                }
+                            ]
+                        }
+                    },
+                    "keyword_gap": {
+                        "site_keywords": [
+                            "basket",
+                            "sort",
+                            "search",
+                            "price",
+                            "high",
+                            "scrapeme",
+                            "home",
+                            "skip",
+                            "wordpress",
+                            "popularity",
+                            "average",
+                            "rating",
+                            "newness",
+                            "showing",
+                            "results",
+                            "comments",
+                            "categories",
+                            "products",
+                            "navigation",
+                            "content",
+                            "just",
+                            "another",
+                            "site",
+                            "menu",
+                            "items",
+                            "product",
+                            "bulbasaur",
+                            "ivysaur",
+                            "venusaur",
+                            "charmander",
+                            "charmeleon",
+                            "charizard",
+                            "squirtle",
+                            "wartortle",
+                            "blastoise",
+                            "caterpie",
+                            "metapod",
+                            "butterfree",
+                            "weedle",
+                            "kakuna",
+                            "beedrill",
+                            "pidgey",
+                            "recent",
+                            "archives",
+                            "meta",
+                            "entries",
+                            "2026",
+                            "built",
+                            "storefront",
+                            "woocommerce"
+                        ],
+                        "competitor_keywords": {},
+                        "keyword_gap": {}
+                    }
+                },
+                "fixed_urls": [
+                    "https://scrapeme.live/shop"
+                ],
+                "strategy": [
+                    "internal_links",
+                    "crawl_budget",
+                    "image_seo",
+                    "core_web_vitals"
+                ],
+                "actions": [
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                            "fix": "add_alt",
+                            "value": "001 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                            "fix": "add_alt",
+                            "value": "002 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                            "fix": "add_alt",
+                            "value": "003 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                            "fix": "add_alt",
+                            "value": "004 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                            "fix": "add_alt",
+                            "value": "005 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                            "fix": "add_alt",
+                            "value": "006 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                            "fix": "add_alt",
+                            "value": "007 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                            "fix": "add_alt",
+                            "value": "008 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                            "fix": "add_alt",
+                            "value": "009 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                            "fix": "add_alt",
+                            "value": "010 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                            "fix": "add_alt",
+                            "value": "011 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                            "fix": "add_alt",
+                            "value": "012 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                            "fix": "add_alt",
+                            "value": "013 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                            "fix": "add_alt",
+                            "value": "014 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                            "fix": "add_alt",
+                            "value": "015 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                            "fix": "add_alt",
+                            "value": "016 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                            "fix": "add_alt",
+                            "value": "001 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/001-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                            "fix": "add_alt",
+                            "value": "002 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/002-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                            "fix": "add_alt",
+                            "value": "003 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/003-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                            "fix": "add_alt",
+                            "value": "004 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/004-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                            "fix": "add_alt",
+                            "value": "005 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/005-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                            "fix": "add_alt",
+                            "value": "006 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/006-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                            "fix": "add_alt",
+                            "value": "007 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/007-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                            "fix": "add_alt",
+                            "value": "008 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/008-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                            "fix": "add_alt",
+                            "value": "009 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/009-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                            "fix": "add_alt",
+                            "value": "010 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/010-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                            "fix": "add_alt",
+                            "value": "011 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/011-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                            "fix": "add_alt",
+                            "value": "012 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/012-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                            "fix": "add_alt",
+                            "value": "013 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/013-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                            "fix": "add_alt",
+                            "value": "014 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/014-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                            "fix": "add_alt",
+                            "value": "015 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/015-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                            "fix": "add_alt",
+                            "value": "016 350X350"
+                        }
+                    },
+                    {
+                        "type": "image_fix",
+                        "url": "https://scrapeme.live/shop/#site-navigation",
+                        "fix": {
+                            "image": "https://scrapeme.live/wp-content/uploads/2018/08/016-350x350.png",
+                            "fix": "add_lazy_loading",
+                            "value": "loading='lazy'"
+                        }
+                    }
+                ],
+                "seo_score": 62
+            },
+            "automation_result": {
+                "status": "success",
+                "action_count": 64,
+                "message": "Actions applied successfully (simulated)."
+            }
+        }
+    }
+}
