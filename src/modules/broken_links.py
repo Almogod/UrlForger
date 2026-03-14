@@ -92,7 +92,8 @@ def _check_link(url):
     """
     try:
         history_count = 0
-        with httpx.Client(follow_redirects=True, timeout=REQUEST_TIMEOUT) as client:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"}
+        with httpx.Client(follow_redirects=True, timeout=REQUEST_TIMEOUT, headers=headers) as client:
             response = client.head(url)
             history_count = len(response.history)
             # Some servers block HEAD, fall back to GET

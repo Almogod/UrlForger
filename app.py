@@ -2,10 +2,15 @@ import os
 import time
 import uuid
 import concurrent.futures
+import asyncio
+import sys
 from fastapi import FastAPI, Form, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 # Core modules
 from src.crawler_engine.crawler import crawl
@@ -97,7 +102,6 @@ def generate(
     domain: str = Form(...),
     limit: int = Form(50),
     use_js: bool = Form(False),
-    fix_canonical: bool = Form(False),
     task_id: str = Form(None),
     background_tasks: BackgroundTasks = None
 ):
@@ -109,7 +113,7 @@ def generate(
         domain=domain, 
         limit=limit, 
         use_js=use_js, 
-        fix_canonical=fix_canonical
+        fix_canonical=False
     )
     return JSONResponse(content={"status": "started", "task_id": task_id})
 
@@ -118,53 +122,74 @@ def generate(
 # ─────────────────────────────────────────────────────────
 
 @app.post("/plugin/run")
-def plugin_run(
-    domain: str = Form(...),
-    limit: int = Form(50),
-    use_js: bool = Form(False),
-    competitors: str = Form(""), # comma separated
-    task_id: str = Form(None),
-    background_tasks: BackgroundTasks = None
+def run_plugin_task(
+    background_tasks: BackgroundTasks,
+    site_url: str = Form(...),
+    competitors: str = Form(""),
+    limit: int = Form(100),
+    openai_key: str = Form(None),
+    gemini_key: str = Form(None),
+    ollama_host: str = Form(None),
+    task_id: str = Form(None)
 ):
     if not task_id:
-        task_id = str(uuid.uuid4())
+        task_id = str(uuid.uuid4())[:10]
+    task_store.set_status(task_id, "In Progress")
     
     comp_list = [c.strip() for c in competitors.split(",") if c.strip()]
     
-    deploy_config = {
-        "platform": config.AUTOMATION_PLATFORM,
-        "github_token": config.GITHUB_TOKEN,
-        "github_repo": config.GITHUB_REPO,
-        "github_branch": config.GITHUB_BRANCH,
-        "ftp_host": config.FTP_HOST,
-        "ftp_user": config.FTP_USER,
-        "ftp_password": config.FTP_PASSWORD,
-        "webhook_url": config.WEBHOOK_URL
-    }
-    
+    # Configure LLM
     llm_config = {
-        "provider": config.LLM_PROVIDER,
-        "api_key": config.OPENAI_API_KEY if config.LLM_PROVIDER == "openai" else config.GEMINI_API_KEY,
-        "ollama_host": config.OLLAMA_HOST
+        "provider": "openai" if openai_key else ("gemini" if gemini_key else "ollama"),
+        "api_key": openai_key or gemini_key,
+        "ollama_host": ollama_host or "http://localhost:11434"
     }
-    
-    crawl_options = {
-        "use_js": use_js,
-        "limit": limit,
-        "timeout": config.CRAWL_TIMEOUT
-    }
-    
+
     background_tasks.add_task(
-        run_plugin,
-        site_url=domain,
+        run_plugin, 
+        site_url=site_url, 
         task_id=task_id,
-        deploy_config=deploy_config,
-        llm_config=llm_config,
         competitors=comp_list,
-        crawl_options=crawl_options
+        llm_config=llm_config,
+        crawl_options={"limit": limit},
+        deploy_config={} # Empty until approved
     )
     
     return JSONResponse(content={"status": "started", "task_id": task_id})
+
+@app.post("/plugin/approve")
+def approve_plugin_fixes(
+    background_tasks: BackgroundTasks,
+    task_id: str = Form(...),
+    approved_actions: str = Form(""), # comma separated IDs
+    approved_pages: str = Form(""),   # comma separated keywords
+    github_token: str = Form(None),
+    ftp_host: str = Form(None),
+    ftp_user: str = Form(None),
+    ftp_pass: str = Form(None),
+    webhook_url: str = Form(None)
+):
+    action_ids = [a.strip() for a in approved_actions.split(",") if a.strip()]
+    page_keywords = [p.strip() for p in approved_pages.split(",") if p.strip()]
+    
+    deploy_config = {
+        "github_token": github_token,
+        "ftp_host": ftp_host,
+        "ftp_user": ftp_user,
+        "ftp_pass": ftp_pass,
+        "webhook_url": webhook_url
+    }
+    
+    from src.plugin.plugin_runner import apply_approved_plugin_fixes
+    background_tasks.add_task(
+        apply_approved_plugin_fixes,
+        task_id=task_id,
+        approved_action_ids=action_ids,
+        approved_page_keywords=page_keywords,
+        deploy_config=deploy_config
+    )
+    
+    return JSONResponse(content={"status": "deployment_started", "task_id": task_id})
 
 @app.get("/results", response_class=HTMLResponse)
 def show_results(request: Request, task_id: str):
@@ -177,53 +202,50 @@ def show_results(request: Request, task_id: str):
     if not results:
         return templates.TemplateResponse("index.html", {"request": request, "error": "Results not found or task incomplete."})
 
-    # The results from run_plugin are slightly different from run_analysis_task
-    # We unify them for the template or pass them directly
-    if "seo_score_before" in results:
-        # This is a plugin run result
-        return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "plugin_report": results,
-                "seo_score": results.get("seo_score_after", 0),
-                "is_plugin": True
-            }
-        )
-
-    engine_result = results.get("engine_result", {})
+    is_plugin = "seo_score_before" in results
+    engine_result = results.get("engine_result", {}) if is_plugin else results.get("engine_result", {})
     modules = engine_result.get("modules", {})
     
-    return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "files": results.get("files", []),
-            "count": results.get("count", 0),
-            "engine_result": engine_result,
-            "automation_result": results.get("automation_result", {}),
-            # Modules
-            "meta_issues": modules.get("meta", {}).get("issues", []),
-            "image_issues": modules.get("image_seo", {}).get("issues", []),
-            "core_issues": modules.get("core_web_vitals", {}).get("issues", []),
-            "link_issues": modules.get("internal_links", {}).get("issues", {}),
-            "speed_issues": modules.get("page_speed", {}).get("issues", []),
-            "heading_issues": modules.get("heading_structure", {}).get("issues", []),
-            "og_issues": modules.get("open_graph", {}).get("issues", []),
-            "quality_issues": modules.get("content_quality", {}).get("issues", []),
-            "mobile_issues": modules.get("mobile_seo", {}).get("issues", []),
-            "experience_issues": modules.get("page_experience", {}).get("issues", []),
-            "schema_issues": modules.get("structured_data_validator", {}).get("issues", []),
-            "hreflang_issues": modules.get("hreflang", {}).get("issues", []),
-            
-            "keyword_gap": modules.get("keyword_gap", {}).get("keyword_gap", {}),
-            "site_keywords": modules.get("keyword_gap", {}).get("site_keywords", []),
-            
-            "actions": engine_result.get("actions", []),
-            "seo_score": engine_result.get("seo_score", 0)
-        }
-    )
+    ctx = {
+        "request": request,
+        "task_id": task_id,
+        "is_plugin": is_plugin,
+        "plugin_report": results if is_plugin else None,
+        "engine_result": engine_result,
+        "seo_score": results.get("seo_score_after") or engine_result.get("seo_score", 0),
+        "actions": results.get("suggested_actions") or engine_result.get("actions", []),
+        "meta_issues": modules.get("meta", {}).get("issues", []),
+        "image_issues": modules.get("image_seo", {}).get("issues", []),
+        "core_issues": modules.get("core_web_vitals", {}).get("issues", []),
+        "speed_issues": modules.get("page_speed", {}).get("issues", []),
+        "heading_issues": modules.get("heading_structure", {}).get("issues", []),
+        "og_issues": modules.get("open_graph", {}).get("issues", []),
+        "quality_issues": modules.get("content_quality", {}).get("issues", []),
+        "mobile_issues": modules.get("mobile_seo", {}).get("issues", []),
+        "experience_issues": modules.get("page_experience", {}).get("issues", []),
+        "schema_issues": modules.get("structured_data_validator", {}).get("issues", []),
+        "hreflang_issues": modules.get("hreflang", {}).get("issues", []),
+        "link_issues": modules.get("broken_links", {}).get("issues", []),
+        "keyword_gap": modules.get("keyword_gap", {}).get("keyword_gap", {}),
+        "site_keywords": modules.get("keyword_gap", {}).get("site_keywords", []),
+        "pages_generated": results.get("pages_generated", [])
+    }
+    
+    return templates.TemplateResponse("index.html", ctx)
+
+@app.get("/plugin/download_report")
+def download_plugin_report(task_id: str):
+    results = task_store.get_results(task_id)
+    if not results:
+        return JSONResponse(status_code=404, content={"error": "Report not found"})
+    
+    from src.utils.pdf_generator import generate_seo_pdf
+    report_file = f"seo_report_{task_id}.pdf"
+    file_path = os.path.join(os.getcwd(), report_file)
+    
+    generate_seo_pdf(results, file_path)
+    return FileResponse(file_path, filename=report_file)
 
 @app.get("/download")
 def download_file(file: str):
-    return FileResponse(os.path.abspath(file), filename=os.path.basename(file))
+    return FileResponse(os.path.abspath(file), filename=os.path.basename(file))

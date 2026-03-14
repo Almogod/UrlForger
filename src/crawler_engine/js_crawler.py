@@ -106,15 +106,12 @@ class JSCrawler:
 
 def crawl_js_sync(start_url, limit=50):
     """
-    Synchronous wrapper for FastAPI usage.
+    Synchronous wrapper for FastAPI usage. Safe for Windows threads.
     """
-
     crawler = JSCrawler(start_url, limit)
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
     try:
+        return asyncio.run(crawler.crawl())
+    except RuntimeError:
+        # Fallback if a loop is already running in this thread
+        loop = asyncio.new_event_loop()
         return loop.run_until_complete(crawler.crawl())
-    finally:
-        loop.close()

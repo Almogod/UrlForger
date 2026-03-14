@@ -9,7 +9,7 @@ from src.services.seo_score import compute_score
 from src.utils.logger import logger
 
 
-def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
+def run_engine(pages, clean_urls, domain, graph, competitors=None, progress_callback=None):
     """
     Core SEO repair engine.
     Executes analysis modules, builds fix strategy, and generates actionable fixes.
@@ -22,7 +22,8 @@ def run_engine(pages, clean_urls, domain, graph, progress_callback=None):
         "pages": pages,
         "urls": clean_urls,
         "domain": domain,
-        "graph": graph
+        "graph": graph,
+        "competitors": competitors or []
     }
 
     logger.info("SEO engine started")

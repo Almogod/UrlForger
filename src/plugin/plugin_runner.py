@@ -50,11 +50,14 @@ def run_plugin(
         "site_url": site_url,
         "started_at": datetime.utcnow().isoformat(),
         "fixes_applied": [],
+        "suggested_actions": [],
         "pages_generated": [],
         "deploy_results": [],
         "seo_score_before": None,
         "seo_score_after": None,
-        "errors": []
+        "engine_result": None,
+        "errors": [],
+        "state": "pending_approval"
     }
 
     try:
@@ -78,86 +81,125 @@ def run_plugin(
             progress_callback=progress
         )
         report["seo_score_before"] = results.get("seo_score", 0)
-        progress(f"SEO score before fixes: {report['seo_score_before']}")
+        report["engine_result"] = results
+        
+        # Collect all suggested actions for user review
+        report["suggested_actions"] = results.get("actions", [])
+        
+        progress(f"SEO score analyzed: {report['seo_score_before']}")
 
         # ─────────────────────────────────────
-        # STEP 3: FIX — apply actions per page
-        # ─────────────────────────────────────
-        progress("Applying SEO fixes to pages...")
-        actions_by_url = _group_actions_by_url(results.get("actions", []))
-        page_html_map = {p["url"]: p.get("html", "") for p in pages}
-
-        for url, actions in actions_by_url.items():
-            original_html = page_html_map.get(url, "")
-            if not original_html:
-                continue
-
-            try:
-                fixed_html = apply_fixes(original_html, actions)
-                file_path = _url_to_file_path(url, domain)
-
-                deploy_result = deploy(file_path, fixed_html, deploy_config)
-                report["fixes_applied"].append({
-                    "url": url,
-                    "actions_count": len(actions),
-                    "deployed": deploy_result.get("success", False)
-                })
-                report["deploy_results"].append(deploy_result)
-
-            except Exception as e:
-                report["errors"].append({"url": url, "error": str(e)})
-
-        progress(f"Fixed {len(report['fixes_applied'])} pages")
-
-        # ─────────────────────────────────────
-        # STEP 4: GENERATE new pages for keyword gaps
+        # STEP 3: GENERATE content briefs (don't deploy yet)
         # ─────────────────────────────────────
         keyword_gaps = _extract_keyword_gaps(results, competitors)
         existing_pages_list = [{"url": p["url"], "title": _get_title(p)} for p in pages]
 
-        if keyword_gaps and llm_config.get("api_key") or llm_config.get("provider") == "ollama":
-            progress(f"Generating {len(keyword_gaps)} new pages for keyword gaps...")
+        if keyword_gaps and (llm_config.get("api_key") or llm_config.get("provider") == "ollama"):
+            progress(f"Analyzing {len(keyword_gaps)} keyword gaps for content generation...")
             from src.content.competitor_analyzer import analyze_competitors
             from src.content.page_generator import generate_page
 
             for keyword in keyword_gaps[:5]:  # cap at 5 new pages per run
                 try:
-                    progress(f"Generating page for keyword: {keyword}")
+                    progress(f"Generating content for keyword: {keyword}")
                     brief = analyze_competitors(competitors, keyword, domain)
                     brief.internal_links = existing_pages_list[:10]
                     generated = generate_page(brief, llm_config, existing_pages_list)
 
-                    file_path = f"{generated['slug']}/index.html"
-                    deploy_result = deploy(file_path, generated["html"], deploy_config)
-
+                    # Add to suggested pages list
                     report["pages_generated"].append({
                         "keyword": keyword,
                         "slug": generated["slug"],
                         "title": generated["meta_title"],
                         "word_count": generated["word_count"],
-                        "deployed": deploy_result.get("success", False)
+                        "html": generated["html"], # Store for deployment later
+                        "approved": True
                     })
-                    report["deploy_results"].append(deploy_result)
 
                 except Exception as e:
                     report["errors"].append({"keyword": keyword, "error": str(e)})
 
-        # ─────────────────────────────────────
-        # STEP 5: Final score (re-analyze after fixes)
-        # ─────────────────────────────────────
-        report["seo_score_after"] = _estimate_score_after(
-            report["seo_score_before"], len(report["fixes_applied"])
-        )
-        report["completed_at"] = datetime.utcnow().isoformat()
-
-        progress("Plugin run complete")
-        task_store.save_result(task_id, report)
+        progress("Analysis complete. Waiting for user approval.")
+        task_store.set_status(task_id, "Pending Approval")
+        task_store.save_results(task_id, report)
 
     except Exception as e:
         logger.error("Plugin run failed: %s", str(e))
         report["errors"].append({"error": str(e)})
         task_store.set_status(task_id, f"Error: {str(e)}")
-        task_store.save_result(task_id, report)
+        task_store.save_results(task_id, report)
+
+
+def apply_approved_plugin_fixes(task_id, approved_action_ids, approved_page_keywords, deploy_config):
+    """
+    Second phase of the plugin: apply only WHAT the user approved.
+    """
+    from urllib.parse import urlparse
+
+    task_store = TaskStore()
+    report = task_store.get_results(task_id)
+    if not report:
+        return
+
+    def progress(msg):
+        logger.info("[plugin-apply:%s] %s", task_id, msg)
+        task_store.set_status(task_id, msg)
+
+    report["state"] = "deploying"
+    
+    try:
+        # 1. Apply HTML Fixes
+        suggested = report.get("suggested_actions", [])
+        # We use the loop index (str) as the ID provided by the UI
+        actions = []
+        for idx_str in approved_action_ids:
+            try:
+                idx = int(idx_str)
+                if 0 <= idx < len(suggested):
+                    actions.append(suggested[idx])
+            except ValueError:
+                continue
+
+        # Get pages from engine_result
+        engine_result = report.get("engine_result", {})
+        pages = engine_result.get("pages", [])
+        page_html_map = {p["url"]: p.get("html", "") for p in pages}
+        domain = urlparse(report["site_url"]).netloc
+
+        progress(f"Deploying {len(actions)} approved fixes...")
+        
+        actions_by_url = _group_actions_by_url(actions)
+        for url, url_actions in actions_by_url.items():
+            original_html = page_html_map.get(url, "")
+            if not original_html:
+                # If HTML is missing from engine_result, we can't apply fixes locally
+                # In a real scenario, we might re-fetch, but for this plugin we assume engine_result has it
+                continue
+            
+            fixed_html = apply_fixes(original_html, url_actions)
+            file_path = _url_to_file_path(url, domain)
+            deploy_result = deploy(file_path, fixed_html, deploy_config)
+            report["fixes_applied"].append({"url": url, "actions": len(url_actions)})
+
+        # 2. Deploy Generated Pages
+        pages_to_gen = [p for p in report.get("pages_generated", []) if p["keyword"] in approved_page_keywords]
+        progress(f"Deploying {len(pages_to_gen)} new pages...")
+        
+        for pg in pages_to_gen:
+            file_path = f"{pg['slug']}/index.html"
+            deploy(file_path, pg["html"], deploy_config)
+            pg["deployed"] = True
+
+        report["state"] = "completed"
+        report["completed_at"] = datetime.utcnow().isoformat()
+        progress("Deployment finished successfully.")
+        task_store.save_results(task_id, report)
+
+    except Exception as e:
+        logger.error("Deployment failed: %s", str(e))
+        task_store.set_status(task_id, f"Deployment Error: {str(e)}")
+        # Save the partial report even on error
+        task_store.save_results(task_id, report)
 
 
 # ─────────────────────────────────────────────────────────
@@ -165,19 +207,23 @@ def run_plugin(
 # ─────────────────────────────────────────────────────────
 
 def _crawl(site_url, crawl_options):
+    from urllib.parse import urlparse
+    from src.utils.url_utils import build_clean_urls
+    
     use_js = crawl_options.get("use_js", False)
     limit = crawl_options.get("limit", 100)
+    domain = urlparse(site_url).netloc
 
     if use_js:
-        from src.js_crawler import crawl_js_sync
-        from src.utils.url_utils import build_clean_urls
+        from src.crawler_engine.js_crawler import crawl_js_sync
+        from src.crawler_engine.graph import CrawlGraph
         pages = crawl_js_sync(site_url, limit=limit)
-        clean_urls, domain, graph = build_clean_urls(pages)
+        graph = CrawlGraph()
     else:
         from src.crawler_engine.crawler import crawl
-        from src.utils.url_utils import build_clean_urls
-        pages, _, _, _ = crawl(site_url, limit=limit)
-        clean_urls, domain, graph = build_clean_urls(pages)
+        pages, graph = crawl(site_url, limit=limit)
+        
+    clean_urls = build_clean_urls(pages)
 
     return pages, clean_urls, domain, graph
 
