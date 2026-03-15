@@ -1,133 +1,87 @@
-from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
-from datetime import datetime
 import os
-
+from datetime import datetime
+from xml.sax.saxutils import escape
 
 MAX_URLS_PER_SITEMAP = 50000
 
-
-def chunk_urls(urls, chunk_size):
-    for i in range(0, len(urls), chunk_size):
-        yield urls[i:i + chunk_size]
-
-
-def create_sitemap(pages, filename):
+def stream_sitemap(pages, filename):
     """
-    Creates a sitemap with support for hreflang, images, and videos.
-    Args:
-        pages: List of dictionaries containing "url" and optional metadata.
+    Streams sitemap to disk to handle large sites with minimal memory.
     """
-    urlset = Element("urlset", {
-        "xmlns": "http://www.sitemaps.org/schemas/sitemap/0.9",
-        "xmlns:xhtml": "http://www.w3.org/1999/xhtml",
-        "xmlns:image": "http://www.google.com/schemas/sitemap-image/1.1",
-        "xmlns:video": "http://www.google.com/schemas/sitemap-video/1.1"
-    })
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ')
+        f.write('xmlns:xhtml="http://www.w3.org/1999/xhtml" ')
+        f.write('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" ')
+        f.write('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n')
+        
+        for page in pages:
+            f.write('  <url>\n')
+            f.write(f'    <loc>{escape(page["url"])}</loc>\n')
+            f.write(f'    <lastmod>{datetime.utcnow().date().isoformat()}</lastmod>\n')
+            
+            # Hreflang
+            for hr in page.get("hreflangs", []):
+                f.write(f'    <xhtml:link rel="{escape(hr["rel"])}" hreflang="{escape(hr["hreflang"])}" href="{escape(hr["href"])}"/>\n')
+                
+            # Images
+            for img in page.get("images", []):
+                f.write('    <image:image>\n')
+                f.write(f'      <image:loc>{escape(img["loc"])}</image:loc>\n')
+                if img.get("title"):
+                    f.write(f'      <image:title>{escape(img["title"])}</image:title>\n')
+                f.write('    </image:image>\n')
+                
+            # Videos
+            for vid in page.get("videos", []):
+                f.write('    <video:video>\n')
+                f.write(f'      <video:content_loc>{escape(vid["content_loc"])}</video:content_loc>\n')
+                f.write(f'      <video:title>{escape(vid.get("title", "Video"))}</video:title>\n')
+                f.write(f'      <video:thumbnail_loc>{escape(page["url"])}</video:thumbnail_loc>\n')
+                f.write(f'      <video:description>{escape(vid.get("description", "Video on page"))}</video:description>\n')
+                f.write('    </video:video>\n')
+                
+            f.write('  </url>\n')
+            
+        f.write('</urlset>')
 
-    for page in pages:
-        url_el = SubElement(urlset, "url")
-
-        loc = SubElement(url_el, "loc")
-        loc.text = page["url"]
-
-        lastmod = SubElement(url_el, "lastmod")
-        lastmod.text = datetime.utcnow().date().isoformat()
-
-        # 1. Hreflang
-        for hr in page.get("hreflangs", []):
-            # Using xhtml:link
-            SubElement(url_el, "{http://www.w3.org/1999/xhtml}link", {
-                "rel": hr["rel"],
-                "hreflang": hr["hreflang"],
-                "href": hr["href"]
-            })
-
-        # 2. Images
-        for img in page.get("images", []):
-            img_el = SubElement(url_el, "{http://www.google.com/schemas/sitemap-image/1.1}image")
-            img_loc = SubElement(img_el, "{http://www.google.com/schemas/sitemap-image/1.1}loc")
-            img_loc.text = img["loc"]
-            if img.get("title"):
-                img_title = SubElement(img_el, "{http://www.google.com/schemas/sitemap-image/1.1}title")
-                img_title.text = img["title"]
-            if img.get("caption"):
-                img_cap = SubElement(img_el, "{http://www.google.com/schemas/sitemap-image/1.1}caption")
-                img_cap.text = img["caption"]
-
-        # 3. Videos
-        for vid in page.get("videos", []):
-            vid_el = SubElement(url_el, "{http://www.google.com/schemas/sitemap-video/1.1}video")
-            vid_loc = SubElement(vid_el, "{http://www.google.com/schemas/sitemap-video/1.1}content_loc")
-            vid_loc.text = vid["content_loc"]
-            vid_title = SubElement(vid_el, "{http://www.google.com/schemas/sitemap-video/1.1}title")
-            vid_title.text = vid.get("title", "Video Content")
-            # Minimal requirements for Google Video Sitemap
-            vid_desc = SubElement(vid_el, "{http://www.google.com/schemas/sitemap-video/1.1}description")
-            vid_desc.text = vid.get("description", "Video on page")
-            vid_thumb = SubElement(vid_el, "{http://www.google.com/schemas/sitemap-video/1.1}thumbnail_loc")
-            vid_thumb.text = page["url"] # Fallback to page URL or some default
-
-    indent(urlset)
-    tree = ElementTree(urlset)
-    tree.write(filename, encoding="utf-8", xml_declaration=True)
-    
-    # Optional Validation Output (Verify against schema)
-    validate_sitemap(filename)
-
-
-def validate_sitemap(filename):
+def generate_sitemaps(pages_iterator, base_url, output_prefix="sitemap"):
     """
-    Validation logic. Could use lxml for a real XSD validation.
-    For now, we'll just check if it's well-formed and non-empty.
+    Enterprise-grade sitemap generator.
+    Handles streaming input to support millions of URLs.
     """
-    try:
-        import os
-        size = os.path.getsize(filename)
-        if size < 100:
-            print(f"Warning: Sitemap {filename} seems too small ({size} bytes)")
-        else:
-            print(f"Sitemap {filename} generated and basic validation passed.")
-    except Exception as e:
-        print(f"Validation failed for {filename}: {e}")
-
-
-def create_sitemap_index(sitemap_files, base_url, filename="sitemap_index.xml"):
-    sitemapindex = Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
-
-    for file in sitemap_files:
-        sitemap = SubElement(sitemapindex, "sitemap")
-
-        loc = SubElement(sitemap, "loc")
-        loc.text = f"{base_url.rstrip('/')}/{file}"
-
-        lastmod = SubElement(sitemap, "lastmod")
-        lastmod.text = datetime.utcnow().date().isoformat()
-
-    indent(sitemapindex)
-    tree = ElementTree(sitemapindex)
-    tree.write(filename, encoding="utf-8", xml_declaration=True)
-
-
-def generate_sitemaps(pages, base_url, output_prefix="sitemap"):
-    """
-    Main entry point for generating sitemaps.
-    Handles splitting and index creation.
-    """
-    total = len(pages)
-
-    if total <= MAX_URLS_PER_SITEMAP:
-        filename = f"{output_prefix}.xml"
-        create_sitemap(pages, filename)
-        return [filename]
-
     sitemap_files = []
-    chunks = list(chunk_urls(pages, MAX_URLS_PER_SITEMAP))
-
-    for i, chunk in enumerate(chunks, start=1):
-        filename = f"{output_prefix}_{i}.xml"
-        create_sitemap(chunk, filename)
+    chunk_index = 1
+    current_chunk = []
+    
+    for page in pages_iterator:
+        current_chunk.append(page)
+        if len(current_chunk) >= MAX_URLS_PER_SITEMAP:
+            filename = f"{output_prefix}_{chunk_index}.xml"
+            stream_sitemap(current_chunk, filename)
+            sitemap_files.append(filename)
+            current_chunk = []
+            chunk_index += 1
+            
+    if current_chunk:
+        filename = f"{output_prefix}_{chunk_index}.xml"
+        stream_sitemap(current_chunk, filename)
         sitemap_files.append(filename)
-
-    create_sitemap_index(sitemap_files, base_url)
-
+        
+    if len(sitemap_files) > 1:
+        index_file = f"{output_prefix}_index.xml"
+        create_sitemap_index(sitemap_files, base_url, index_file)
+        return [index_file] + sitemap_files
+        
     return sitemap_files
+
+def create_sitemap_index(sitemap_files, base_url, filename):
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
+        for sf in sitemap_files:
+            f.write('  <sitemap>\n')
+            f.write(f'    <loc>{base_url.rstrip("/")}/{sf}</loc>\n')
+            f.write(f'    <lastmod>{datetime.utcnow().date().isoformat()}</lastmod>\n')
+            f.write('  </sitemap>\n')
+        f.write('</sitemapindex>')

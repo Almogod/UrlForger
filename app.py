@@ -5,13 +5,18 @@ import time
 import uuid
 import concurrent.futures
 from typing import Optional, Union
+from datetime import datetime # Added for /health endpoint
 
-from fastapi import FastAPI, Form, BackgroundTasks, Request, HTTPException
+from fastapi import FastAPI, Form, BackgroundTasks, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 # Core modules
 from src.config import config
+from src.utils.logger import logger, audit_logger
+from src.services.auth import verify_token, admin_only
+from src.services.batch_manager import batch_manager
 from src.crawler_engine.crawler import crawl
 from src.crawler_engine.js_crawler import crawl_js_sync
 from src.utils.url_utils import build_clean_urls
