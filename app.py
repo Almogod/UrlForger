@@ -46,15 +46,25 @@ def get_progress(task_id: str):
         "error": task_info.get("error", None)
     }
 
-def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_canonical: bool):
+def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_canonical: bool, delay: float = 1.0, check_robots: bool = True, generate_sitemap: bool = True):
     try:
         task_store.set_status(task_id, "Crawling website pages...")
         
         if use_js:
-            pages = crawl_js_sync(domain, limit=limit)
+            pages = crawl_js_sync(domain, limit=limit, delay=delay, check_robots=check_robots)
             graph = None
         else:
-            pages, graph = crawl(domain, limit=limit)
+            # Note: We need a slight modification to how 'crawl' passes arguments if we want to be strict
+            # but for now we'll assume the scheduler.run_workers is what we want to tune.
+            from src.crawler_engine.frontier import URLFrontier
+            from src.crawler_engine.parser import extract_links
+            from src.crawler_engine.scheduler import run_workers
+            from src.crawler_engine.graph import CrawlGraph
+            
+            frontier = URLFrontier()
+            frontier.add(domain)
+            graph = CrawlGraph()
+            pages = asyncio.run(run_workers(frontier, extract_links, graph, limit=limit, delay=delay, check_robots=check_robots))
         
         task_store.set_status(task_id, "Checking existing sitemap...")
         sitemap_urls = get_sitemap_urls(domain)
@@ -63,7 +73,7 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
                 break
             # Avoid duplicates if they were already crawled
             if not any(p["url"] == url for p in pages):
-                pages.append({"url": url, "status": 200, "html": ""})
+                pages.append({"url": url, "status": 200, "html": "", "hreflangs": [], "images": [], "videos": []})
 
         pages.sort(key=lambda x: x.get("url", ""))
 
@@ -89,18 +99,24 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
         }
         automation_result = run_automation(actions, automation_config)
 
-        # 3. Generate Files
-        task_store.set_status(task_id, "Finalizing...")
-        fixed_urls = engine_result.get("fixed_urls", [])
-        files = generate_sitemaps(fixed_urls, base_url=domain)
+        # 3. Generate Files (Conditional)
+        files = []
+        if generate_sitemap:
+            task_store.set_status(task_id, "Generating Sitemaps...")
+            # Pass full page objects which now contain hreflang/media
+            files = generate_sitemaps(pages, base_url=domain)
+        else:
+            task_store.set_status(task_id, "Skipping Sitemap Generation as requested.")
 
         # 4. Save Results
+        task_store.set_status(task_id, "Finalizing...")
         final_results = {
             "files": files,
             "count": len(clean_urls),
             "engine_result": engine_result,
             "automation_result": automation_result,
-            "analysis_mode": "standard"
+            "analysis_mode": "standard",
+            "sitemap_generated": generate_sitemap
         }
         task_store.save_results(task_id, final_results)
 
@@ -119,6 +135,9 @@ def generate(
     domain: str = Form(...),
     limit: int = Form(50),
     use_js: bool = Form(False),
+    delay: float = Form(1.0),
+    check_robots: bool = Form(True),
+    generate_sitemap: bool = Form(True),
     task_id: Optional[str] = Form(None)
 ):
     # Ensure at least 1 page
@@ -131,7 +150,10 @@ def generate(
         domain=domain, 
         limit=limit, 
         use_js=use_js, 
-        fix_canonical=False
+        fix_canonical=False,
+        delay=delay,
+        check_robots=check_robots,
+        generate_sitemap=generate_sitemap
     )
     return JSONResponse(content={"status": "started", "task_id": task_id})
 
