@@ -5,8 +5,15 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # App Settings
+    APP_ENV: str = os.getenv("APP_ENV", "development") # development, production, enterprise
     APP_NAME: str = "SEO Enterprise Platform"
-    DEBUG: bool = False
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    
+    # Timeouts & Retries (Profile specific)
+    TIMEOUT: int = 30
+    MAX_RETRIES: int = 3
+    CONCURRENCY: int = 5
+    
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT: str = os.getenv("LOG_FORMAT", "json") # json or text
     
@@ -50,6 +57,17 @@ class Settings(BaseSettings):
 def load_config(config_path: Optional[str] = "config.yaml") -> Settings:
     """Load settings from environment and optionally a YAML file."""
     settings = Settings()
+    
+    # Profile overrides
+    if settings.APP_ENV == "production":
+        settings.TIMEOUT = 15
+        settings.MAX_RETRIES = 2
+        settings.CONCURRENCY = 20
+    elif settings.APP_ENV == "enterprise":
+        settings.TIMEOUT = 10
+        settings.MAX_RETRIES = 1
+        settings.CONCURRENCY = 50
+
     if config_path and os.path.exists(config_path):
         try:
             with open(config_path, 'r') as f:

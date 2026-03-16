@@ -12,3 +12,10 @@ requests
 PyYAML
 PyJWT
 fpdf2
+slowapi
+prometheus-fastapi-instrumentator
+sentry-sdk
+secure
+redis
+pydantic[email]
+psutil

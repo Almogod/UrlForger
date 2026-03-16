@@ -12,6 +12,24 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from prometheus_fastapi_instrumentator import Instrumentator
+from starlette.middleware.base import BaseHTTPMiddleware
+
+start_time = time.time()
+
+# Initialize Sentry
+if os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=1.0,
+    )
+
 # Core modules
 from src.config import config
 from src.utils.logger import logger, audit_logger
@@ -26,11 +44,39 @@ from src.services.generator import generate_sitemaps
 from src.engine.engine import run_engine
 from src.automation.automation_engine import run_automation
 from src.plugin.plugin_runner import run_plugin
+from src.services.cache_service import cache_service
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
+# Rate Limiter setup
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title=config.APP_NAME)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Prometheus setup
+Instrumentator().instrument(app).expose(app)
+
+# Security Headers Middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 templates = Jinja2Templates(directory="templates")
 
 @app.exception_handler(Exception)
@@ -51,8 +97,26 @@ def get_progress(task_id: str):
         "error": task_info.get("error", None)
     }
 
+@app.get("/health")
+def health_check():
+    import psutil
+    process = psutil.Process(os.getpid())
+    return {
+        "status": "healthy",
+        "uptime": time.time() - start_time,
+        "memory_usage_mb": process.memory_info().rss / (1024 * 1024),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
 def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_canonical: bool, delay: float = 1.0, check_robots: bool = True, generate_sitemap: bool = True):
     try:
+        cache_key = f"analysis:{domain}:{limit}"
+        cached_res = cache_service.get(cache_key)
+        if cached_res:
+             task_store.set_status(task_id, "Completed (from cache)")
+             task_store.save_results(task_id, cached_res)
+             return
+
         task_store.set_status(task_id, "Crawling website pages...")
         
         if use_js:
@@ -124,6 +188,7 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
             "sitemap_generated": generate_sitemap
         }
         task_store.save_results(task_id, final_results)
+        cache_service.set(cache_key, final_results)
 
     except Exception as e:
         import traceback
@@ -135,6 +200,7 @@ def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/generate")
+@limiter.limit("100/15minutes")
 def generate(
     background_tasks: BackgroundTasks,
     domain: str = Form(...),
@@ -167,6 +233,7 @@ def generate(
 # ─────────────────────────────────────────────────────────
 
 @app.post("/plugin/run")
+@limiter.limit("20/15minutes")
 def run_plugin_task(
     background_tasks: BackgroundTasks,
     site_url: str = Form(...),
@@ -206,6 +273,7 @@ def run_plugin_task(
     return JSONResponse(content={"status": "started", "task_id": task_id})
 
 @app.post("/plugin/approve")
+@limiter.limit("20/15minutes")
 def approve_plugin_fixes(
     background_tasks: BackgroundTasks,
     task_id: str = Form(...),
@@ -308,6 +376,7 @@ def download_plugin_report(task_id: str):
     return FileResponse(file_path, filename=report_file)
 
 @app.post("/plugin/generate_content")
+@limiter.limit("10/15minutes")
 def generate_keyword_content(
     background_tasks: BackgroundTasks,
     task_id: str = Form(...),

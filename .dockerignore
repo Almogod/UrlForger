@@ -1,0 +1,11 @@
+node_modules
+.git
+.env
+__pycache__
+*.pyc
+tasks.json
+audit.log
+*.pdf
+.pytest_cache
+.vscode
+.gemini
