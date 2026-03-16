@@ -8,3 +8,7 @@ jinja2
 python-multipart
 playwright
 pydantic-settings
+requests
+PyYAML
+PyJWT
+fpdf2
