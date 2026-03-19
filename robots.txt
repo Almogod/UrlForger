@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: www.qcecuring.com/sitemap.xml
+Sitemap: https://https://scrapeme.live/shop/sitemap.xml

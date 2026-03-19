@@ -72,12 +72,15 @@ async def run_workers(frontier, parser, graph, limit=200, concurrency=10, delay=
                     if delay > 0:
                         await asyncio.sleep(delay)
                     
+                    logger.info(f"Worker fetching: {url}")
                     page = await fetch(client, url)
 
                 if not page:
+                    logger.warning(f"Worker failed to fetch: {url}")
                     continue
 
                 results.append(page)
+                logger.info(f"Worker fetched {url} (Status: {page.get('status')}). Progress: {len(results)}/{limit}")
 
                 # Only parse successfully fetched pages
                 if page.get("status") == 200 and page.get("html"):

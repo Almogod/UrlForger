@@ -117,8 +117,7 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
              task_store.save_results(task_id, cached_res)
              return
 
-        task_store.set_status(task_id, "Crawling website pages...")
-        
+        logger.info(f"Starting crawl for {domain} with limit {limit} (JS: {use_js})...")
         if use_js:
             pages = crawl_js_sync(domain, limit=limit, delay=delay, check_robots=check_robots)
             graph = None
@@ -130,10 +129,13 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
             from src.crawler_engine.scheduler import run_workers
             from src.crawler_engine.graph import CrawlGraph
             
+            logger.info("Initializing frontier and graph...")
             frontier = URLFrontier()
             frontier.add(domain)
             graph = CrawlGraph()
+            logger.info("Starting run_workers...")
             pages = asyncio.run(run_workers(frontier, extract_links, graph, limit=limit, delay=delay, check_robots=check_robots))
+        logger.info(f"Crawl completed. Found {len(pages)} pages.")
         
         task_store.set_status(task_id, "Checking existing sitemap...")
         sitemap_urls = get_sitemap_urls(domain)
@@ -202,6 +204,7 @@ def home(request: Request):
 @app.post("/generate")
 @limiter.limit("100/15minutes")
 def generate(
+    request: Request,
     background_tasks: BackgroundTasks,
     domain: str = Form(...),
     limit: int = Form(50),
@@ -235,6 +238,7 @@ def generate(
 @app.post("/plugin/run")
 @limiter.limit("20/15minutes")
 def run_plugin_task(
+    request: Request,
     background_tasks: BackgroundTasks,
     site_url: str = Form(...),
     competitors: str = Form(""),
@@ -275,6 +279,7 @@ def run_plugin_task(
 @app.post("/plugin/approve")
 @limiter.limit("20/15minutes")
 def approve_plugin_fixes(
+    request: Request,
     background_tasks: BackgroundTasks,
     task_id: str = Form(...),
     approved_actions: str = Form(""), # comma separated IDs
@@ -378,6 +383,7 @@ def download_plugin_report(task_id: str):
 @app.post("/plugin/generate_content")
 @limiter.limit("10/15minutes")
 def generate_keyword_content(
+    request: Request,
     background_tasks: BackgroundTasks,
     task_id: str = Form(...),
     keyword: str = Form(...),
