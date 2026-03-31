@@ -5,13 +5,7 @@ from collections import Counter
 import re
 import httpx
 
-
-STOPWORDS = {
-    "the","and","for","with","this","that","from","are","was","were",
-    "have","has","had","you","your","about","into","their","they",
-    "them","will","would","could","should","there","here","what",
-    "when","where","which","while","also","more","most","such"
-}
+from src.content.stopwords import STOPWORDS
 
 
 def run(context):

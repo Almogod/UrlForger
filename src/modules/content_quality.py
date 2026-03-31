@@ -11,6 +11,8 @@ from collections import Counter
 import re
 import hashlib
 
+from src.content.stopwords import STOPWORDS
+
 
 MIN_WORD_COUNT = 300
 KEYWORD_STUFFING_THRESHOLD = 0.04   # > 4% = stuffed
@@ -123,7 +125,7 @@ def _tokenize(text):
     text = text.lower()
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     tokens = text.split()
-    return [t for t in tokens if len(t) > 3]
+    return [t for t in tokens if len(t) > 3 and t not in STOPWORDS]
 
 
 def _hash_content(text):
