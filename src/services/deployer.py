@@ -142,12 +142,19 @@ def _deploy_github(file_path: str, content: str, config: dict) -> dict:
                 "message": err_msg
             }
 
+    commit_sha = ""
+    try:
+        commit_sha = response.json().get("commit", {}).get("sha", "")
+    except Exception as e:
+        logger.warning(f"Could not extract commit_sha from success payload: {e}")
+
     return {
         "success": True,
         "platform": "github",
         "file_path": file_path,
         "repo": repo,
         "branch": branch,
+        "commit_sha": commit_sha,
         "message": "Committed successfully"
     }
 

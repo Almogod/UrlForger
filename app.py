@@ -155,6 +155,14 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
         pages.sort(key=lambda x: x.get("url", ""))
 
         task_store.set_status(task_id, "Cleaning URLs...")
+        
+        # FINAL FAILSAFE: Strict Path Filtering
+        # Ensure that regardless of how the page was found (sitemap, JS crawl, etc),
+        # it strictly matches the subdirectory path of the explicit target domain.
+        base_path = urlparse(domain).path
+        if base_path and base_path != "/":
+            pages = [p for p in pages if urlparse(p.get("url", "")).path.startswith(base_path) or urlparse(p.get("url", "")).path == base_path]
+            
         # Pre-process
         clean_urls = build_clean_urls(pages, fix_canonical)
         

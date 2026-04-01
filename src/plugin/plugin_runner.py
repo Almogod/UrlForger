@@ -210,6 +210,9 @@ def apply_approved_plugin_fixes(task_id, approved_action_ids, approved_page_keyw
 
         progress(f"Deploying {len(actions)} approved fixes...")
         
+        deployed_files = {}
+        latest_commit_sha = ""
+        
         actions_by_url = _group_actions_by_url(actions)
         for url, url_actions in actions_by_url.items():
             original_html = page_html_map.get(url, "")
@@ -224,7 +227,12 @@ def apply_approved_plugin_fixes(task_id, approved_action_ids, approved_page_keyw
             fixed_html = apply_fixes(original_html, url_actions)
             file_path = _url_to_file_path(url, report["site_url"])
             progress(f"Targeting repo path: {file_path}")
+            
+            deployed_files[file_path] = fixed_html
+            
             deploy_result = deploy(file_path, fixed_html, deploy_config)
+            if deploy_result.get("commit_sha"):
+                latest_commit_sha = deploy_result.get("commit_sha")
             report["deploy_results"].append(deploy_result)
             report["fixes_applied"].append({"url": url, "actions": len(url_actions), "deploy": deploy_result.get("success", False)})
 
@@ -240,7 +248,11 @@ def apply_approved_plugin_fixes(task_id, approved_action_ids, approved_page_keyw
             # Prefer the modular react jsx payload, fallback to html if not available for some reason
             payload = pg.get("react_jsx") or pg.get("html", "")
             
+            deployed_files[file_path] = payload
+            
             deploy_result = deploy(file_path, payload, deploy_config)
+            if deploy_result.get("commit_sha"):
+                latest_commit_sha = deploy_result.get("commit_sha")
             report["deploy_results"].append(deploy_result)
             pg["deployed"] = deploy_result.get("success", False)
 
@@ -250,6 +262,16 @@ def apply_approved_plugin_fixes(task_id, approved_action_ids, approved_page_keyw
             progress("Creating Vercel deployment...")
             vercel_result = vercel_flush_deploy(deploy_config)
             report["deploy_results"].append(vercel_result)
+
+        # 4. Trigger GitHub Workflow Monitor if applicable (Autonomous Self-Healing CI/CD)
+        if deploy_config.get("platform") == "github" and deployed_files:
+            progress("Initiating autonomous GitHub Actions workflow monitor...")
+            try:
+                from src.services.github_monitor import monitor_and_autofix_workflow
+                monitor_and_autofix_workflow(deploy_config, deployed_files, latest_commit_sha, llm_config, progress, max_retries=3)
+            except Exception as monitor_ex:
+                progress(f"Workflow monitor halted: {monitor_ex}")
+                report["workflow_error"] = str(monitor_ex)
 
         report["state"] = "completed"
         report["seo_score_after"] = _estimate_score_after(
@@ -317,6 +339,11 @@ def _crawl(site_url, crawl_options, site_token=None):
             pages.append({"url": url, "status": 200, "html": ""})
         
     from src.utils.url_utils import build_clean_urls
+
+    base_path = urlparse(site_url).path
+    if base_path and base_path != "/":
+        pages = [p for p in pages if urlparse(p.get("url", "")).path.startswith(base_path) or urlparse(p.get("url", "")).path == base_path]
+        
     clean_urls = build_clean_urls(pages)
 
     return pages, clean_urls, domain, graph

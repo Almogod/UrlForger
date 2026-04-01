@@ -25,6 +25,10 @@ class JSCrawler:
         self.results = []
 
         self.domain = urlparse(start_url).netloc
+        self.base_path = ""
+        path = urlparse(start_url).path
+        if path and path != "/":
+            self.base_path = path
         self.rp = None
         
         if self.check_robots:
@@ -151,6 +155,8 @@ class JSCrawler:
             absolute = urljoin(base_url, href)
             parsed = urlparse(absolute)
             if parsed.netloc == self.domain:
+                if self.base_path and not parsed.path.startswith(self.base_path) and parsed.path != self.base_path:
+                    continue
                 links.append(absolute)
                 
         # 2. Hreflang

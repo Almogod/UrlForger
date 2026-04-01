@@ -14,8 +14,14 @@ class URLFrontier:
         self.queue = deque()
         self.visited = set()
         self.base_domain = base_domain
+        self.base_path = ""
         if base_domain and "://" in base_domain:
-            self.base_domain = urlparse(base_domain).netloc
+            parsed = urlparse(base_domain)
+            self.base_domain = parsed.netloc
+            # Lock the crawler strictly to the provided subdirectory path (e.g. /repo or /blog)
+            path = parsed.path
+            if path and path != "/":
+                self.base_path = path
 
     def add(self, url, depth=0, force_add=False):
         if not url:
@@ -25,6 +31,8 @@ class URLFrontier:
         if self.base_domain and not force_add:
             parsed = urlparse(url)
             if parsed.netloc and parsed.netloc != self.base_domain:
+                return
+            if self.base_path and not parsed.path.startswith(self.base_path) and parsed.path != self.base_path:
                 return
 
         if url not in self.visited:
@@ -54,8 +62,14 @@ class SQLiteURLFrontier:
         self._local = threading.local()
         
         self.base_domain = base_domain
+        self.base_path = ""
         if base_domain and "://" in base_domain:
-            self.base_domain = urlparse(base_domain).netloc
+            parsed = urlparse(base_domain)
+            self.base_domain = parsed.netloc
+            # Lock the crawler strictly to the provided subdirectory path (e.g. /repo or /blog)
+            path = parsed.path
+            if path and path != "/":
+                self.base_path = path
 
         conn = self._get_conn()
         conn.execute("CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, url TEXT, depth INTEGER)")
@@ -76,6 +90,8 @@ class SQLiteURLFrontier:
         if self.base_domain and not force_add:
             parsed = urlparse(url)
             if parsed.netloc and parsed.netloc != self.base_domain:
+                return
+            if self.base_path and not parsed.path.startswith(self.base_path) and parsed.path != self.base_path:
                 return
 
         conn = self._get_conn()

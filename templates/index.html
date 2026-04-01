@@ -1206,6 +1206,43 @@
         </div>
         {% endif %}
 
+        {% if plugin_report.state == 'deploying' %}
+        <div class="review-section" style="border-color: var(--secondary-color);">
+            <h3 style="color: var(--secondary-color);">Deploying Approved Fixes 🚀</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">UrlForge is currently applying your approved fixes and pushing them to your repository...</p>
+            <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; text-align: center;">
+                <div class="spinner" style="margin: 0 auto 15px auto; width: 40px; height: 40px; border: 4px solid rgba(16, 185, 129, 0.2); border-left-color: var(--secondary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <p id="status-display-static" style="font-weight: 600; font-size: 1.1rem; color: var(--text-color);">Reconnecting to deployment logs...</p>
+                <div style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                    You can stay on this page. The results will appear automatically once the operation completes.
+                </div>
+            </div>
+        </div>
+        <script>
+            // Resume polling for users who manually refreshed the page mid-deployment
+            setTimeout(() => {
+                const staticDisplay = document.getElementById('status-display-static');
+                let lastKnown = "";
+                const staticPoll = setInterval(async () => {
+                    try {
+                        const statusRes = await fetch('/progress?task_id={{task_id}}');
+                        if (statusRes.ok) {
+                            const data = await statusRes.json();
+                            if (data.status !== lastKnown) {
+                                lastKnown = data.status;
+                                staticDisplay.innerText = lastKnown;
+                            }
+                            if (data.state === 'completed' || data.state === 'failed' || data.state === 'error') {
+                                clearInterval(staticPoll);
+                                location.reload();
+                            }
+                        }
+                    } catch(e) {}
+                }, 1000);
+            }, 500);
+        </script>
+        {% endif %}
+
         {% if plugin_report.state == 'completed' %}
             {% set total_failed = plugin_report.deploy_results | selectattr('success', 'equalto', false) | list | length %}
             {% set total_success = plugin_report.deploy_results | selectattr('success', 'equalto', true) | list | length %}
@@ -1750,7 +1787,44 @@
                 const res = await fetch('/plugin/approve', { method: 'POST', body: formData });
                 if (res.ok) {
                     // Start polling the same task_id
-                    setTimeout(() => location.reload(), 2000);
+                    let lastStatus = "";
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusRes = await fetch('/progress?task_id={{task_id}}');
+                            if (statusRes.ok) {
+                                const statusData = await statusRes.json();
+                                
+                                const currentStatus = statusData.status;
+                                if (currentStatus && currentStatus !== lastStatus) {
+                                    lastStatus = currentStatus;
+                                    statusDisplay.style.opacity = '0';
+                                    setTimeout(() => {
+                                        statusDisplay.innerText = currentStatus;
+                                        statusDisplay.style.opacity = '1';
+                                        statusDisplay.classList.remove('status-fade-in');
+                                        void statusDisplay.offsetWidth;
+                                        statusDisplay.classList.add('status-fade-in');
+                                    }, 300);
+                                }
+
+                                if (statusData.state === 'error') {
+                                    clearInterval(pollInterval);
+                                    overlay.classList.add('hidden');
+                                    alert('Error: ' + (statusData.error || 'Unknown error'));
+                                    return;
+                                }
+                                
+                                if (statusData.state === 'completed' || statusData.state === 'failed') {
+                                    clearInterval(pollInterval);
+                                    setTimeout(() => {
+                                        location.reload();
+                                    }, 500);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Polling error:", err);
+                        }
+                    }, 1000);
                 } else {
                     alert("Approval submission failed");
                     overlay.classList.add('hidden');
