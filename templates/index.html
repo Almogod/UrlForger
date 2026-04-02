@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UrlForge | Autonomous SEO Engine</title>
-    <link rel="stylesheet" href="/static/modern_forge.css?v=3">
+    <link rel="stylesheet" href="/static/modern_forge.css?v={{ timestamp | default('4') }}">
 </head>
 <body>
     <canvas id="bg-canvas"></canvas>
@@ -37,6 +37,7 @@
         <div class="tabs-header">
             <button class="tab-btn active" onclick="switchTab('standard-tab')">Standard Analysis</button>
             <button class="tab-btn" onclick="switchTab('plugin-tab')">Autonomous Plugin</button>
+            <button class="tab-btn" onclick="switchTab('content-tab')">AI Content Creator</button>
         </div>
 
         <!-- TAB 1: STANDARD -->
@@ -113,6 +114,11 @@
                 <div class="form-group">
                     <label>Competitor Domains (comma separated)</label>
                     <input type="text" name="competitors" placeholder="competitor1.com, competitor2.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Priority Target Keyword (Optional)</label>
+                    <input type="text" name="target_keyword" placeholder="e.g. best cloud security practices">
                 </div>
 
                 <div class="form-group">
@@ -210,6 +216,54 @@
             </form>
         </div>
 
+        <!-- TAB 3: STANDALONE CONTENT GENERATOR -->
+        <div id="content-tab" class="tab-content">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                Input a keyword and domain to generate a high-quality, SEO-optimized page immediately.
+            </p>
+            <form id="standalone-content-form" action="/plugin/content_only" method="post">
+                <div class="form-group">
+                    <label>Target Domain</label>
+                    <input type="text" name="domain" placeholder="https://mysite.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Target Keyword</label>
+                    <input type="text" name="keyword" placeholder="e.g. best coding assistant" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Competitors (Optional, comma separated)</label>
+                    <input type="text" name="competitors" placeholder="competitor1.com, competitor2.com">
+                </div>
+
+                <div class="ai-world-section" style="border-top: 1px solid var(--card-border); margin-top: 20px; padding-top: 20px;">
+                    <div id="ai-discovery-card-content" class="ai-discovery-card" onclick="revealAIFormsContent()">
+                        <h3 class="ai-world-title" style="font-size: 1.2rem;">AI Engine Config ✨</h3>
+                        <div class="ai-orbit-system">
+                            <div class="orbit-ring" style="width: 140px; height: 140px; animation-duration: 8s;"></div>
+                            <div class="ai-core"><div class="ai-eyes"><span></span><span></span></div></div>
+                        </div>
+                        <div class="ai-click-me">Configure LLM ↓</div>
+                    </div>
+
+                    <div id="ai-config-forms-content" class="ai-config-forms hidden">
+                        <div class="form-group">
+                            <label>OpenAI API Key (Optional)</label>
+                            <input type="password" name="openai_key" placeholder="sk-...">
+                        </div>
+                        <div class="form-group">
+                            <label>Gemini API Key (Optional)</label>
+                            <input type="password" name="gemini_key" placeholder="AIza...">
+                        </div>
+                        <button type="button" class="back-to-world" onclick="hideAIFormsContent(event)">← Back</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="content-submit-btn">Generate SEO Page</button>
+            </form>
+        </div>
+
         <!-- LOADING UI INLINE -->
         <div id="loading-overlay" class="hidden" style="margin-top: 30px; border-top: 1px solid var(--card-border); padding-top: 25px;">
             <div class="status-container">
@@ -288,11 +342,11 @@
                 <tbody>
                     {% for p in engine_result.pages[:50] %}
                     <tr>
-                        <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <td class="url-cell">
                             <a href="{{p.url}}" target="_blank" title="{{p.url}}">{{p.url}}</a>
                         </td>
                         <td><span class="badge" style="font-size: 0.65rem;">{{ (p.content_type | default('text/unknown')).split('/')[-1]|upper }}</span></td>
-                        <td><span class="{% if p.status == 200 %}stat-good{% else %}stat-bad{% endif %}" style="font-weight: 700;">{{p.status}}</span></td>
+                        <td><span class="{% if p.status in [200, 304] %}stat-good{% else %}stat-bad{% endif %}" style="font-weight: 700;">{{p.status}}</span></td>
                         <td>{{p.response_time_ms}}</td>
                         <td>{{p.links|length if p.links else 0}}</td>
                         <td>
@@ -341,11 +395,21 @@
             </div>
         </div>
 
-        {% if plugin_report.content_generation_available and plugin_report.keyword_recommendations %}
+        <!-- CONTENT ENGINE SECTION (ALWAYS VISIBLE IN PLUGIN MODE) -->
         <div class="review-section" style="margin-top: 20px; border-top: 1px solid var(--card-border); padding-top: 20px;">
-            <h3 style="margin-bottom: 15px; font-weight: 600;">Content Engine: Keyword Gap Recommendations</h3>
-            <p style="color: var(--text-muted); margin-bottom: 15px;">Target these keywords that your competitors rank for but you are missing.</p>
+            <h3 style="margin-bottom: 15px; font-weight: 600;">Content Engine: Keyword Strategy</h3>
             
+            <!-- Manual Keyword Entry -->
+            <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--card-border);">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Target a specific keyword for your site:</p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="manual-keyword" placeholder="e.g. artificial intelligence in healthcare" style="flex: 1; padding: 10px; border-radius: 8px;">
+                    <button onclick="generateContentForKeyword(document.getElementById('manual-keyword').value, '')" class="submit-btn" style="width: auto; margin-top: 0; padding: 10px 20px;">Generate Page</button>
+                </div>
+            </div>
+
+            {% if plugin_report.keyword_recommendations %}
+            <p style="color: var(--text-muted); margin-bottom: 15px;">Target these keywords that your competitors rank for but you are missing.</p>
             <table class="suggestions-table">
                 <thead>
                     <tr>
@@ -368,8 +432,10 @@
                     {% endfor %}
                 </tbody>
             </table>
+            {% else %}
+            <p style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;">No keyword gaps automatically discovered. Use the manual entry above to target new terms.</p>
+            {% endif %}
         </div>
-        {% endif %}
 
         {% if plugin_report.state == 'pending_approval' %}
         <div class="review-section" id="review-area">
@@ -390,7 +456,7 @@
                     <tr>
                         <td><input type="checkbox" class="action-check" data-id="{{loop.index0}}" checked></td>
                         <td><span class="badge">{{action.type}}</span></td>
-                        <td>{{action.url|truncate(40)}}</td>
+                        <td class="url-cell">{{action.url}}</td>
                         <td>
                             {% if action.description %}
                                 {{action.description}}
@@ -671,64 +737,122 @@
     <div class="card result-card glass-card">
         <h2 class="section-title">Deep Audit Results</h2>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-            <!-- Column 1 -->
-            <div>
-                <!-- Meta & Headings -->
-                {% if meta_issues or heading_issues %}
-                <h3 style="margin-top: 0;">Content Structure</h3>
-                <ul style="font-size: 0.9rem;">
-                    {% for issue in meta_issues %} <li style="color: var(--error-color);">{{issue}}</li> {% endfor %}
-                    {% for issue in heading_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
-                </ul>
-                {% endif %}
-
-                <!-- Images -->
-                {% if image_issues %}
-                <h3 style="margin-top: 20px;">Media Optimization</h3>
-                <ul style="font-size: 0.9rem;">
-                    {% for issue in image_issues %} <li style="color: var(--error-color);">{{issue}}</li> {% endfor %}
-                </ul>
-                {% endif %}
-
-                <!-- Speed & Performance -->
-                {% if speed_issues or core_issues %}
-                <h3 style="margin-top: 20px;">Performance</h3>
-                <ul style="font-size: 0.9rem;">
-                    {% for issue in speed_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
-                    {% for issue in core_issues %} <li style="color: var(--error-color);">{{issue}}</li> {% endfor %}
-                </ul>
-                {% endif %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <!-- Content & Strategy -->
+            {% if meta_issues or heading_issues or quality_issues %}
+            <div class="audit-module-card">
+                <div class="audit-module-header">
+                    <div class="audit-module-icon">📄</div>
+                    <div class="audit-module-title">Content Structure</div>
+                </div>
+                <div class="issues-list">
+                    {% for issue in meta_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Optimization opportunity detected.</span>
+                        </div>
+                    {% endfor %}
+                    {% for issue in heading_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Found at <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(50) }}</a></span>
+                        </div>
+                    {% endfor %}
+                    {% for issue in quality_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Page: <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(50) }}</a></span>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
+            {% endif %}
 
-            <!-- Column 2 -->
-            <div>
-                <!-- Mobile & Experience -->
-                {% if mobile_issues or experience_issues %}
-                <h3 style="margin-top: 0;">User Experience</h3>
-                <ul style="font-size: 0.9rem;">
-                    {% for issue in mobile_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
-                    {% for issue in experience_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
-                </ul>
-                {% endif %}
-
-                <!-- Technical SEO -->
-                {% if schema_issues or hreflang_issues %}
-                <h3 style="margin-top: 20px;">Semantic & Technical</h3>
-                <ul style="font-size: 0.9rem;">
-                    {% for issue in schema_issues %} <li style="color: var(--error-color);">{{issue.issue}}: {{issue.schema_type}}</li> {% endfor %}
-                    {% for issue in hreflang_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
-                </ul>
-                {% endif %}
-
-                <!-- Links & Quality -->
-                {% if quality_issues or link_issues %}
-                <h3 style="margin-top: 20px;">Quality & Links</h3>
-                <ul style="font-size: 0.9rem;">
-                    {% for issue in quality_issues %} <li style="color: var(--error-color);">{{issue.issue}} ({{issue.url}})</li> {% endfor %}
-                </ul>
-                {% endif %}
+            <!-- Media & Images -->
+            {% if image_issues %}
+            <div class="audit-module-card">
+                <div class="audit-module-header">
+                    <div class="audit-module-icon">🖼️</div>
+                    <div class="audit-module-title">Media Optimization</div>
+                </div>
+                <div class="issues-list">
+                    {% for issue in image_issues %}
+                        {% if issue is mapping %}
+                            <div class="issue-item warning">
+                                <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                                <span class="issue-secondary-text">
+                                    <strong>Image:</strong> {{ issue.image | truncate(30) }}<br>
+                                    <strong>Found on:</strong> <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(40) }}</a>
+                                </span>
+                            </div>
+                        {% else %}
+                            <div class="issue-item warning">
+                                <span class="issue-main-text">{{ issue | replace('_', ' ') | capitalize }}</span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
+            {% endif %}
+
+            <!-- Technical & Semantic -->
+            {% if schema_issues or hreflang_issues %}
+            <div class="audit-module-card">
+                <div class="audit-module-header">
+                    <div class="audit-module-icon">🧬</div>
+                    <div class="audit-module-title">Semantic & Technical</div>
+                </div>
+                <div class="issues-list">
+                    {% for issue in schema_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue.schema_type }} {{ issue.issue | replace('_', ' ') }}</span>
+                            <span class="issue-secondary-text">Check implementation for standard compliance.</span>
+                        </div>
+                    {% endfor %}
+                    {% for issue in hreflang_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Affecting <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(50) }}</a></span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Speed & Experience -->
+            {% if speed_issues or core_issues or mobile_issues or experience_issues %}
+            <div class="audit-module-card">
+                <div class="audit-module-header">
+                    <div class="audit-module-icon">⚡</div>
+                    <div class="audit-module-title">User Experience</div>
+                </div>
+                <div class="issues-list">
+                    {% for issue in speed_issues %}
+                        <div class="issue-item warning">
+                            <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Improve loading speed for <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(50) }}</a></span>
+                        </div>
+                    {% endfor %}
+                    {% for issue in core_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue | replace('_', ' ') | capitalize }}</span>
+                        </div>
+                    {% endfor %}
+                    {% for issue in mobile_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Responsiveness check: <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(50) }}</a></span>
+                        </div>
+                    {% endfor %}
+                    {% for issue in experience_issues %}
+                        <div class="issue-item">
+                            <span class="issue-main-text">{{ issue.issue | replace('_', ' ') | capitalize }}</span>
+                            <span class="issue-secondary-text">Interactive elements at <a href="{{ issue.url }}" class="issue-url-link" target="_blank">{{ issue.url | truncate(50) }}</a></span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Keyword Gap -->
@@ -877,6 +1001,17 @@
     function revealAIForms() {
         document.getElementById('ai-discovery-card').classList.add('hidden');
         document.getElementById('ai-config-forms').classList.remove('hidden');
+    }
+
+    function hideAIFormsContent(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('ai-discovery-card-content').classList.remove('hidden');
+        document.getElementById('ai-config-forms-content').classList.add('hidden');
+    }
+
+    function revealAIFormsContent() {
+        document.getElementById('ai-discovery-card-content').classList.add('hidden');
+        document.getElementById('ai-config-forms-content').classList.remove('hidden');
     }
 
     const navBtn = document.querySelector('.nav-btn');
@@ -1035,6 +1170,7 @@
 
     handleFormSubmit('generate-form', '/generate');
     handleFormSubmit('plugin-form', '/plugin/run');
+    handleFormSubmit('standalone-content-form', '/plugin/content_only');
 
     function toggleAll(master) {
         document.querySelectorAll('.action-check').forEach(c => c.checked = master.checked);
@@ -1239,6 +1375,6 @@
         </div>
     </div>
     
-    <script src="/static/brain_engine.js"></script>
+    <script src="/static/brain_engine.js?v={{ timestamp | default('4') }}"></script>
 </body>
 </html>

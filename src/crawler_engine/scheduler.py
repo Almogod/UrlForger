@@ -9,10 +9,14 @@ from src.config import config
 from src.utils.logger import logger
 
 
-async def run_workers(frontier, parser, graph, limit=200, concurrency=10, delay=1.0, check_robots=True, extra_headers=None, broken_links_only=False, max_depth=10, crawl_assets=False, custom_selectors=None):
+async def run_workers(frontier, parser, graph, start_url=None, limit=200, concurrency=10, delay=1.0, check_robots=True, extra_headers=None, broken_links_only=False, max_depth=10, crawl_assets=False, custom_selectors=None):
     results = []
     broken_links = []
     rp = None
+    
+    # Normalizing start_url for comparison
+    from .frontier import ensure_scheme
+    comp_url = ensure_scheme(start_url)
     
     # 1. Asynchronous robots.txt handling
     if check_robots:
@@ -119,16 +123,28 @@ async def run_workers(frontier, parser, graph, limit=200, concurrency=10, delay=
                     if frontier.base_domain and parsed_u.netloc and parsed_u.netloc != frontier.base_domain:
                         is_external = True
 
-                    # If in broken links mode, we mainly care about Non-200s
+                    # Initialize default metadata to prevent KeyError in analysis modules
+                    page["meta"] = {}
+                    page["headings"] = {}
+                    page["images"] = []
+                    page["videos"] = []
+                    page["hreflangs"] = []
+                    page["custom"] = {}
+                    page["canonical"] = ""
+
+                    # If in broken links mode, we mainly care about Non-200s (Treat 304 as healthy)
                     if broken_links_only:
-                        if status and status != 200:
+                        # Always include the start URL for baseline context, otherwise just non-200s
+                        if (url == comp_url) or (status and status not in [200, 304]):
                             results.append(page)
-                            logger.info(f"Worker found broken link: {url} (Status: {status})")
+                            if status and status not in [200, 304]:
+                                logger.info(f"Worker found broken link: {url} (Status: {status})")
                     else:
                         results.append(page)
-                        logger.info(f"Worker fetched {url} (Status: {status}). Progress: {len(results)}/{limit}")
+                        status_msg = "Valid (Cached)" if status == 304 else f"Status: {status}"
+                        logger.info(f"Worker fetched {url} ({status_msg}). Progress: {len(results)}/{limit}")
 
-                    # Only parse if it's 200, not external, and within depth
+                    # Only parse if it's 200, not external, and within depth (304 has no body, so we can't parse it)
                     if status == 200 and page.get("html") and not is_external and depth < max_depth:
                         extracted = parser(page["html"], page["url"], custom_selectors=custom_selectors)
                         

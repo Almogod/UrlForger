@@ -14,7 +14,10 @@ class CacheService:
             self.enabled = True
             logger.info("Redis cache connected")
         except Exception as e:
-            logger.warning(f"Redis not available, caching disabled: {e}")
+            if config.APP_ENV != "production":
+                logger.info(f"Redis cache disabled (Development fallback): Use a local Redis server to enable high-performance caching.")
+            else:
+                logger.warning(f"Redis not available, caching disabled: {e}")
 
     def get(self, key: str) -> Optional[Any]:
         if not self.enabled:

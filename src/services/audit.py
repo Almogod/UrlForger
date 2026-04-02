@@ -15,10 +15,19 @@ def generate_audit_report(pages, clean_urls):
 
     for p in pages:
         url = p.get("url")
-        status = p.get("status", 0)
-
         if not url:
             continue
+            
+        status = p.get("status", 0)
+        
+        # Ensure baseline keys exist for legacy pages/mock data (defense in depth)
+        p["meta"] = p.get("meta", {})
+        p["headings"] = p.get("headings", {})
+        p["images"] = p.get("images", [])
+        p["videos"] = p.get("videos", [])
+        p["hreflangs"] = p.get("hreflangs", [])
+        p["custom"] = p.get("custom", {})
+        p["canonical"] = p.get("canonical", "")
 
         # Duplicate URLs
         if url in seen:
@@ -26,8 +35,8 @@ def generate_audit_report(pages, clean_urls):
         else:
             seen.add(url)
 
-        # Non-200 pages
-        if status != 200:
+        # Non-200 pages (treating 304 as healthy)
+        if status not in [200, 304]:
             report["issues"]["non_200"].append(url)
 
         # Query parameters

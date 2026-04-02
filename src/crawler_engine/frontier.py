@@ -3,17 +3,39 @@ import heapq
 import time
 from src.config import config
 from collections import deque
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
+
+def ensure_scheme(url: str, default_scheme: str = "https") -> str:
+    """Ensure the URL has a scheme (defaulting to https)."""
+    if not url:
+        return url
+    
+    # Handle cases like "example.com" or "example.com/path"
+    parsed = urlparse(url)
+    if not parsed.scheme:
+        # If there's no scheme, we assume the first part until "/" or ":" is the netloc
+        # unless it starts with "/" (relative path)
+        if url.startswith(("//", "/")):
+            return f"{default_scheme}:{url}" if url.startswith("//") else url
+        
+        # Check if the URL has a dot in the first segment (heuristic for domain)
+        parts = url.split("/", 1)
+        if "." in parts[0]:
+            return f"{default_scheme}://{url}"
+            
+    return url
 
 class URLFrontier:
     def __init__(self, base_domain=None):
         self.queue = [] # Heap for priority queue
         self.visited = set()
-        self.base_domain = base_domain
+        self.base_domain = None
         self.base_path = ""
         self.counter = 0 # To ensure stable sort for same priority
-        if base_domain and "://" in base_domain:
-            parsed = urlparse(base_domain)
+        
+        if base_domain:
+            normalized = ensure_scheme(base_domain)
+            parsed = urlparse(normalized)
             self.base_domain = parsed.netloc
             path = parsed.path
             if path and path != "/":
@@ -22,6 +44,8 @@ class URLFrontier:
     def add(self, url, depth=0, force_add=False, priority=0):
         if not url:
             return
+        
+        url = ensure_scheme(url)
         
         # Domain locking: only add if same domain (unless force_add is true for external validation)
         if self.base_domain and not force_add:
@@ -64,10 +88,11 @@ class SQLiteURLFrontier:
         self.db_path = db_path
         self._local = threading.local()
         
-        self.base_domain = base_domain
+        self.base_domain = None
         self.base_path = ""
-        if base_domain and "://" in base_domain:
-            parsed = urlparse(base_domain)
+        if base_domain:
+            normalized = ensure_scheme(base_domain)
+            parsed = urlparse(normalized)
             self.base_domain = parsed.netloc
             path = parsed.path
             if path and path != "/":
@@ -91,6 +116,8 @@ class SQLiteURLFrontier:
         if not url:
             return
         
+        url = ensure_scheme(url)
+        
         if self.base_domain and not force_add:
             parsed = urlparse(url)
             if parsed.netloc and parsed.netloc != self.base_domain:
@@ -99,69 +126,31 @@ class SQLiteURLFrontier:
                 return
 
         conn = self._get_conn()
-        cur = conn.cursor()
-        cur.execute("SELECT 1 FROM visited WHERE url = ?", (url,))
-        if cur.fetchone():
-            return
-            
-        cur.execute("INSERT OR IGNORE INTO visited (url) VALUES (?)", (url,))
-        cur.execute("INSERT INTO queue (url, depth, priority) VALUES (?, ?, ?)", (url, depth, priority))
-        conn.commit()
+        # Check visited
+        res = conn.execute("SELECT 1 FROM visited WHERE url = ?", (url,)).fetchone()
+        if not res:
+            try:
+                conn.execute("INSERT INTO visited (url) VALUES (?)", (url,))
+                conn.execute("INSERT INTO queue (url, depth, priority) VALUES (?, ?, ?)", (url, depth, priority))
+                conn.commit()
+            except:
+                pass # Already visited in concurrent race
 
     def get(self):
         conn = self._get_conn()
-        cur = conn.cursor()
-        cur.execute("SELECT id, url, depth FROM queue ORDER BY priority DESC, id ASC LIMIT 1")
-        row = cur.fetchone()
-        if row:
-            cur.execute("DELETE FROM queue WHERE id = ?", (row[0],))
+        res = conn.execute("SELECT id, url, depth FROM queue ORDER BY priority DESC, id ASC LIMIT 1").fetchone()
+        if res:
+            id, url, depth = res
+            conn.execute("DELETE FROM queue WHERE id = ?", (id,))
             conn.commit()
-            return {"url": row[1], "depth": row[2]}
+            return {"url": url, "depth": depth}
         return None
 
     def size(self):
-        cur = self._get_conn().cursor()
-        cur.execute("SELECT COUNT(*) FROM queue")
-        row = cur.fetchone()
-        return row[0] if row else 0
+        conn = self._get_conn()
+        return conn.execute("SELECT COUNT(*) FROM queue").fetchone()[0]
 
     def peek(self):
-        cur = self._get_conn().cursor()
-        cur.execute("SELECT url FROM queue ORDER BY priority DESC, id ASC LIMIT 1")
-        row = cur.fetchone()
-        return row[0] if row else None
-
-    def get_visited(self):
-        cur = self._get_conn().cursor()
-        cur.execute("SELECT url FROM visited LIMIT 1")
-        row = cur.fetchone()
-        return [row[0]] if row else []
-
-
-class RedisURLFrontier:
-    """Enterprise-grade frontier using Redis for distributed crawling."""
-    def __init__(self, job_id: str):
-        import redis
-        self.r = redis.from_url(config.REDIS_URL)
-        self.queue_key = f"frontier:queue:{job_id}"
-        self.visited_key = f"frontier:visited:{job_id}"
-
-    def add(self, url, priority=0):
-        if not self.r.sismember(self.visited_key, url):
-            # Using Sorted Set for priority
-            self.r.zadd(self.queue_key, {url: priority})
-
-    def get(self):
-        # Atomic pop from max-priority
-        res = self.r.bzpopmax(self.queue_key, timeout=1)
-        if res:
-            url = res[1].decode('utf-8')
-            self.r.sadd(self.visited_key, url)
-            return {"url": url, "depth": 0} # Redis depth tracking not yet implemented
-        return None
-
-    def size(self):
-        return self.r.zcard(self.queue_key)
-
-    def clear(self):
-        self.r.delete(self.queue_key, self.visited_key)
+        conn = self._get_conn()
+        res = conn.execute("SELECT url FROM queue ORDER BY priority DESC, id ASC LIMIT 1").fetchone()
+        return res[0] if res else None

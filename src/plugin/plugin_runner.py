@@ -63,6 +63,7 @@ def run_plugin(
     competitors: list,
     crawl_options: dict,
     site_token: str = None,
+    target_keyword: str = None,
     pipeline: List[str] = ["crawl", "analyze", "generate"],
     dry_run: bool = False
 ):
@@ -152,6 +153,24 @@ def run_plugin(
                 report["content_generation_available"] = bool(keyword_gaps)
                 report["keyword_recommendations"] = keyword_gaps
                 report["existing_pages_list"] = existing_pages_list
+                
+                # ── Priority Content Generation (from target_keyword) ────────
+                if target_keyword:
+                    progress(f"Priority Content Generation: '{target_keyword}'")
+                    from src.content.engine import generate_content_for_keyword
+                    priority_page = generate_content_for_keyword(
+                        target_keyword, 
+                        competitors, 
+                        llm_config, 
+                        existing_pages=existing_pages_list
+                    )
+                    if "error" not in priority_page:
+                        priority_page["keyword"] = target_keyword
+                        report["pages_generated"].append(priority_page)
+                        progress(f"Priority page generated for '{target_keyword}'")
+                    else:
+                        progress(f"Priority generation failed: {priority_page.get('error')}")
+                        report["errors"].append({"phase": "priority_gen", "keyword": target_keyword, "error": priority_page.get("error")})
 
         if dry_run:
             progress("Dry run complete. No changes would be applied.")
@@ -314,13 +333,18 @@ def _crawl(site_url, crawl_options, site_token=None):
     backend = crawl_options.get("backend", "memory")
     concurrency = crawl_options.get("concurrency", 10)
     custom_selectors = crawl_options.get("custom_selectors", None)
+    broken_links_only = crawl_options.get("broken_links_only", False)
     domain = urlparse(site_url).netloc
 
     if use_js:
         from src.crawler_engine.js_crawler import crawl_js_sync
-        from src.crawler_engine.graph import CrawlGraph
-        pages = crawl_js_sync(site_url, limit=limit, headers=headers)
-        graph = CrawlGraph()
+        pages, graph = crawl_js_sync(
+            site_url, 
+            limit=limit, 
+            headers=headers, 
+            crawl_assets=crawl_assets, 
+            broken_links_only=broken_links_only
+        )
     else:
         from src.crawler_engine.crawler import crawl
         pages, graph = crawl(
@@ -331,7 +355,8 @@ def _crawl(site_url, crawl_options, site_token=None):
             crawl_assets=crawl_assets,
             backend=backend,
             concurrency=concurrency,
-            custom_selectors=custom_selectors
+            custom_selectors=custom_selectors,
+            broken_links_only=broken_links_only
         )
     
     # Also add sitemap URLs but respect limit

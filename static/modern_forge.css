@@ -465,3 +465,157 @@ input:focus {
     transition: color 0.3s;
 }
 .back-to-world:hover { color: #fff; }
+
+/* Audit Module Specifics */
+.audit-module-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.audit-module-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-4px);
+}
+
+.audit-module-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.audit-module-icon {
+    font-size: 1.2rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.audit-module-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+}
+
+.issue-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: rgba(239, 68, 68, 0.05);
+    border-left: 3px solid #ef4444;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.issue-item.warning {
+    background: rgba(245, 158, 11, 0.05);
+    border-left-color: #f59e0b;
+}
+
+.issue-main-text {
+    font-weight: 600;
+    color: #fff;
+    display: block;
+}
+
+.issue-secondary-text {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 4px;
+    display: block;
+    word-break: break-all;
+}
+
+.issue-url-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.issue-url-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* Table Styles - Fixed UI Overlap */
+.suggestions-table, .audit-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    table-layout: auto;
+}
+
+.suggestions-table th, .audit-table th {
+    text-align: left;
+    padding: 12px 18px;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--card-border);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.suggestions-table td, .audit-table td {
+    padding: 18px;
+    border-bottom: 1px solid var(--card-border);
+    vertical-align: middle;
+    color: var(--text-color);
+    line-height: 1.4;
+}
+
+.suggestions-table tr:last-child td, .audit-table tr:last-child td {
+    border-bottom: none;
+}
+
+.suggestions-table tr:hover, .audit-table tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.02);
+}
+
+.audit-table-wrapper {
+    overflow-x: auto;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    margin-top: 15px;
+}
+
+.suggestions-table .badge {
+    margin-bottom: 0;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--card-border);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* URL Column Constraints */
+.url-cell {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* Response for long labels */
+@media (max-width: 768px) {
+    .suggestions-table, .audit-table {
+        display: block;
+        overflow-x: auto;
+    }
+}

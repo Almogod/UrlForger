@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
-from src.schemas.request import PluginRunRequest, PluginApproveRequest, KeywordGenerationRequest, ContentUpdateRequest
+from src.schemas.request import PluginRunRequest, PluginApproveRequest, KeywordGenerationRequest, ContentUpdateRequest, StandaloneContentRequest
 from src.services.task_store import task_store
 from src.plugin.plugin_runner import run_plugin, apply_approved_plugin_fixes
 from src.utils.logger import logger
@@ -21,10 +21,7 @@ async def run_plugin_task(
     task_store.set_status(task_id, "In Progress", domain=data.site_url)
     
     # ── API Key Merging Logic ────────────────────────────────────────
-    # 1. Take from frontend (data)
-    # 2. Fallback to .env (config)
-    # 3. Use None if both are missing (Engine handles fallback to builtin)
-    
+    # ... (skipping some lines for brevity in instruction, will replace whole block)
     frontend_openai = data.openai_key.get_secret_value() if data.openai_key else None
     frontend_gemini = data.gemini_key.get_secret_value() if data.gemini_key else None
     
@@ -66,13 +63,81 @@ async def run_plugin_task(
             "crawl_assets": data.crawl_assets, 
             "backend": data.crawler_backend,
             "concurrency": data.concurrency,
-            "custom_selectors": data.custom_selectors
+            "custom_selectors": data.custom_selectors,
+            "broken_links_only": data.broken_links_only
         },
+        target_keyword=data.target_keyword,
         site_token=None,
         deploy_config={} 
     )
     
     return JSONResponse(content={"status": "started", "task_id": task_id})
+
+@router.post("/content_only")
+async def run_content_only(
+    data: StandaloneContentRequest,
+    background_tasks: BackgroundTasks
+):
+    task_id = data.task_id or str(uuid.uuid4())[:10]
+    task_store.set_status(task_id, "In Progress", domain=data.domain)
+    
+    # Merging logic for LLM
+    final_openai = data.openai_key or (config.OPENAI_API_KEY.get_secret_value() if config.OPENAI_API_KEY else None)
+    final_gemini = data.gemini_key or (config.GEMINI_API_KEY.get_secret_value() if config.GEMINI_API_KEY else None)
+    final_ollama = data.ollama_host or config.OLLAMA_HOST
+    
+    provider = "openai" if final_openai else ("gemini" if final_gemini else "ollama")
+    api_key = final_openai or final_gemini or (final_ollama if provider == "ollama" else None)
+
+    llm_config = {
+        "provider": provider,
+        "api_key": api_key,
+        "ollama_host": final_ollama,
+        "openai_key": final_openai,
+        "gemini_key": final_gemini
+    }
+
+    background_tasks.add_task(
+        _run_content_only_bg,
+        task_id=task_id,
+        domain=data.domain,
+        keyword=data.keyword,
+        competitors=data.competitors or [],
+        llm_config=llm_config
+    )
+    
+    return JSONResponse(content={"status": "started", "task_id": task_id})
+
+async def _run_content_only_bg(task_id, domain, keyword, competitors, llm_config):
+    from src.content.engine import generate_content_for_keyword
+    try:
+        report = {
+            "task_id": task_id,
+            "site_url": domain,
+            "is_plugin": True, # For UI consistency
+            "seo_score_before": 0,
+            "state": "pending_approval",
+            "pages_generated": [],
+            "suggested_actions": [],
+            "llm_config": llm_config
+        }
+        task_store.save_results(task_id, report)
+        
+        task_store.set_status(task_id, f"Generating page for '{keyword}'...")
+        res = generate_content_for_keyword(keyword, competitors, llm_config, existing_pages=[])
+        
+        if "error" in res:
+            task_store.set_status(task_id, f"Error: {res['error']}")
+            return
+
+        res["keyword"] = keyword
+        report["pages_generated"].append(res)
+        report["state"] = "pending_approval"
+        task_store.save_results(task_id, report)
+        task_store.set_status(task_id, "Completed")
+    except Exception as e:
+        logger.error(f"Standalone generation failed: {e}")
+        task_store.set_status(task_id, f"Failed: {str(e)}")
 
 @router.post("/approve")
 async def approve_plugin_fixes(

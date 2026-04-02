@@ -8,6 +8,7 @@ class BaseCrawlRequest(BaseModel):
     crawler_backend: str = Field("memory", pattern="^(memory|sqlite)$")
     concurrency: int = Field(10, ge=1, le=100)
     custom_selectors: Optional[Dict[str, str]] = None
+    broken_links_only: bool = False
     task_id: Optional[str] = None
 
 class GenerateRequest(BaseCrawlRequest):
@@ -16,11 +17,11 @@ class GenerateRequest(BaseCrawlRequest):
     delay: float = Field(1.0, ge=0.1, le=30.0)
     check_robots: bool = True
     generate_sitemap: bool = True
-    broken_links_only: bool = False
 
 class PluginRunRequest(BaseCrawlRequest):
     site_url: str
     competitors: Optional[List[str]] = None
+    target_keyword: Optional[str] = None
     openai_key: Optional[SecretStr] = None
     gemini_key: Optional[SecretStr] = None
     ollama_host: Optional[str] = "http://localhost:11434"
@@ -53,6 +54,15 @@ class PluginApproveRequest(BaseModel):
 
 class KeywordGenerationRequest(BaseModel):
     task_id: str
+    keyword: str
+    competitors: Optional[List[str]] = None
+    openai_key: Optional[str] = None
+    gemini_key: Optional[str] = None
+    ollama_host: Optional[str] = None
+
+class StandaloneContentRequest(BaseModel):
+    task_id: str
+    domain: str
     keyword: str
     competitors: Optional[List[str]] = None
     openai_key: Optional[str] = None

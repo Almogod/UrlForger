@@ -70,6 +70,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+# No-Cache Middleware (Ensures 200 OK instead of 304 in Dev)
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/static") or config.APP_ENV != "production":
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
@@ -112,14 +124,14 @@ app.include_router(plugin_router, prefix="/plugin", tags=["Plugin"])
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request, "timestamp": int(time.time())})
 
 @app.get("/results", response_class=HTMLResponse)
 def show_results(request: Request, task_id: str):
     task_info = task_store.get_status(task_id)
     
     if task_info.get("state") == "error":
-        return templates.TemplateResponse("index.html", {"request": request, "error": task_info.get("error")})
+        return templates.TemplateResponse("index.html", {"request": request, "error": task_info.get("error"), "timestamp": int(time.time())})
         
     results = task_store.get_results(task_id)
     if not results:
@@ -152,7 +164,8 @@ def show_results(request: Request, task_id: str):
         "keyword_gap": modules.get("keyword_gap", {}).get("keyword_gap", {}),
         "site_keywords": modules.get("keyword_gap", {}).get("site_keywords", []),
         "pages_generated": results.get("pages_generated", []),
-        "active_tab": "plugin-tab" if is_plugin else "standard-tab"
+        "active_tab": "plugin-tab" if is_plugin else "standard-tab",
+        "timestamp": int(time.time())
     }
     
     return templates.TemplateResponse("index.html", ctx)

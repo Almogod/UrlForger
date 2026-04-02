@@ -6,7 +6,7 @@ from .scheduler import run_workers
 from .graph import CrawlGraph
 from src.utils.logger import logger
 
-def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=False, backend="memory", concurrency=10, custom_selectors=None):
+def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=False, backend="memory", concurrency=10, custom_selectors=None, broken_links_only=False):
     if backend == "sqlite":
         logger.info("Initializing SQLite Enterprise Frontier...")
         frontier = SQLiteURLFrontier(base_domain=start_url)
@@ -25,12 +25,14 @@ def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=F
             frontier, 
             extract_links, 
             graph, 
+            start_url=start_url,
             limit=limit, 
             concurrency=concurrency,
             extra_headers=extra_headers,
             max_depth=max_depth,
             crawl_assets=crawl_assets,
-            custom_selectors=custom_selectors
+            custom_selectors=custom_selectors,
+            broken_links_only=broken_links_only
         )
     )
 
