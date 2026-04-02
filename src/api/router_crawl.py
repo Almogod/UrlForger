@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request, BackgroundTasks, Depends, JSONResponse
+from fastapi import APIRouter, Request, BackgroundTasks, Depends
+from fastapi.responses import JSONResponse
 from src.schemas.request import GenerateRequest
 from src.services.auth import verify_token
 from src.services.task_store import task_store
