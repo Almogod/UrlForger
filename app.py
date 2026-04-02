@@ -6,10 +6,12 @@ import time
 import uuid
 import concurrent.futures
 from typing import Optional, Union
+from urllib.parse import urlparse
 from datetime import datetime # Added for /health endpoint
 
 from fastapi import FastAPI, Form, BackgroundTasks, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -80,6 +82,7 @@ app.add_middleware(
 )
 
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

@@ -4,702 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UrlForge | Autonomous SEO Engine</title>
-    
-    <!-- Apply theme ASAP to avoid flash and persist states -->
-    <script>
-        const initTheme = localStorage.getItem('theme');
-        if (initTheme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        :root, html[data-theme="light"] {
-            /* Light Theme - Refined Sand & Pearl */
-            --bg-color: #fdfbf7;
-            --text-color: #1a202c;
-            --text-muted: #64748b;
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --card-border: rgba(0, 0, 0, 0.05);
-            --primary-color: #10b981;
-            --primary-hover: #059669;
-            --secondary-color: #8b5cf6;
-            --error-color: #ef4444;
-            --hover-glow: rgba(16, 185, 129, 0.12);
-            --glow-size: 600px;
-            --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        html[data-theme="dark"] {
-            /* Dark Theme - Midnight Slate */
-            --bg-color: #020617; 
-            --text-color: #f1f5f9;
-            --text-muted: #94a3b8;
-            --card-bg: rgba(15, 23, 42, 0.6);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --primary-color: #10b981;
-            --primary-hover: #34d399;
-            --secondary-color: #a78bfa;
-            --error-color: #f87171;
-            --hover-glow: rgba(16, 185, 129, 0.06);
-            --glow-size: 600px;
-            --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        /* -------------------------------------
-           GLOBAL AMBIENT GLOW & BODY
-           ------------------------------------- */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            transition: background-color 0.4s ease, color 0.4s ease;
-            position: relative;
-            z-index: 0;
-        }
-
-        /* The Antigravity Global Mouse Tracker */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: radial-gradient(
-                var(--glow-size, 600px) circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-                var(--hover-glow),
-                transparent 70%
-            );
-            z-index: -1;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
-
-        /* Ambient animated gradient background */
-        body {
-            background: radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.03), transparent 40%),
-                        radial-gradient(circle at top left, rgba(16, 185, 129, 0.03), transparent 40%),
-                        var(--bg-color);
-        }
-
-        /* Subtle dot pattern overlaid universally */
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background-image: radial-gradient(var(--card-border) 1px, transparent 1px);
-            background-size: 30px 30px;
-            z-index: -2;
-            pointer-events: none;
-        }
-
-        h1, h2, h3, h4 {
-            margin-top: 0;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-        }
-
-        a {
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        a:hover {
-            color: var(--primary-hover);
-            text-decoration: underline;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 60px 20px 30px 20px;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 2.4rem;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-        }
-
-        /* Theme Toggle */
-        .theme-toggle {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-color);
-            padding: 10px 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-        }
-        
-        .theme-toggle:hover {
-            background: var(--card-border);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        /* -------------------------------------
-           CARDS & LAYOUT
-           ------------------------------------- */
-        #cards {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 20px 80px 20px;
-        }
-
-        /* Clean, refined glassmorphism cards without harsh glow borders */
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            box-shadow: var(--card-shadow);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 40px;
-            position: relative;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        /* Subtle lift effect on hover */
-        .card:hover {
-            transform: translateY(-4px) scale(1.002);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-            border-color: rgba(16, 185, 129, 0.2);
-        }
-        
-        [data-theme="dark"] .card:hover {
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.4), 0 5px 15px -3px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 100px 20px 40px;
-            text-align: center;
-            max-width: 900px;
-            margin: 0 auto;
-            animation: fadeInDown 0.8s ease-out;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.05em;
-        }
-
-        /* Floating Core Animation */
-        .seo-core {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 40px;
-            background: radial-gradient(circle, var(--primary-color), var(--secondary-color));
-            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-            filter: blur(2px);
-            opacity: 0.8;
-            box-shadow: 0 0 50px var(--primary-color);
-            animation: floatCore 6s ease-in-out infinite, morphCore 8s ease-in-out infinite alternate;
-            cursor: pointer;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
-        }
-
-        .seo-core:hover {
-            transform: scale(1.1);
-            filter: blur(0px) brightness(1.2);
-            box-shadow: 0 0 80px var(--primary-color);
-        }
-
-        @keyframes floatCore {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
-        }
-
-        @keyframes morphCore {
-            0% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
-            100% { border-radius: 30% 60% 60% 40% / 50% 60% 30% 60%; }
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto 30px;
-            line-height: 1.6;
-        }
-
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Inputs and Forms */
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 500;
-            color: var(--text-color);
-            font-size: 0.95rem;
-        }
-
-        input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 12px;
-            border: 1px solid var(--card-border);
-            background: rgba(255, 255, 255, 0.3);
-            color: var(--text-color);
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
-        }
-        
-        [data-theme="dark"] input[type="text"], [data-theme="dark"] input[type="number"] {
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        input[type="text"]:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background: transparent;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-
-        .checkbox-group label {
-            margin-bottom: 0;
-            display: inline-block;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-
-        button.submit-btn {
-            background-color: var(--primary-color);
-            color: #ffffff;
-            border: none;
-            border-radius: 12px;
-            padding: 16px 24px;
-            font-size: 1.05rem;
-            font-weight: 600;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: 'Inter', sans-serif;
-            margin-top: 15px;
-            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
-        }
-
-        button.submit-btn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-        
-        button.submit-btn:active {
-            transform: translateY(1px);
-            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
-        }
-
-        /* Extended UI / Text Display */
-        .section-title {
-            color: var(--primary-color);
-            margin-top: 0;
-            margin-bottom: 24px;
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
-
-        /* Score Display */
-        .score-display {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            margin-bottom: 35px;
-            padding-bottom: 25px;
-            border-bottom: 1px solid var(--card-border);
-        }
-
-        .score-circle {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 700;
-            color: white;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        }
-        
-        .score-circle.good { background-image: linear-gradient(135deg, #34d399, #10b981); }
-        .score-circle.average { background-image: linear-gradient(135deg, #fbbf24, #f59e0b); }
-        .score-circle.bad { background-image: linear-gradient(135deg, #f87171, #ef4444); }
-
-        .score-text h3 {
-            margin: 0 0 6px 0;
-            font-size: 1.3rem;
-            letter-spacing: -0.01em;
-        }
-
-        .score-text p {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        /* Lists & Accordions */
-        ul {
-            padding-left: 20px;
-            line-height: 1.7;
-        }
-        
-        li {
-            margin-bottom: 6px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--card-border);
-            color: var(--text-muted);
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-        
-        p b {
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        /* Sequential Task Display */
-        .status-container {
-            margin-top: 30px;
-            padding: 30px;
-            background: rgba(16, 185, 129, 0.03);
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            text-align: center;
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #status-display {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: var(--text-color);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        .status-pulse {
-            width: 8px;
-            height: 8px;
-            background: var(--primary-color);
-            border-radius: 50%;
-            margin-bottom: 15px;
-            box-shadow: 0 0 15px var(--primary-color);
-            animation: statusPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes statusPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
-        }
-
-        .status-fade-in {
-            animation: statusFadeIn 0.5s forwards;
-        }
-
-        @keyframes statusFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Tabs UI */
-        .tabs-header {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-            border-bottom: 1px solid var(--card-border);
-            padding-bottom: 10px;
-        }
-
-        .tab-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-radius: 8px;
-        }
-
-        .tab-btn.active {
-            color: var(--primary-color);
-            background: var(--card-border);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Suggestions Styles */
-        .suggestions-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .suggestions-table th, .suggestions-table td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid var(--card-border);
-        }
-        .suggestions-table th {
-            background: var(--card-border);
-            color: var(--text-color);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-        }
-        .suggestions-table tr:hover {
-            background: rgba(16, 185, 129, 0.03);
-        }
-        .review-section {
-            border: 1px solid var(--primary-color);
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            background: rgba(16, 185, 129, 0.02);
-        }
-        .hidden {
-            display: none !important;
-        }
-
-        .deploy-group {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px dashed var(--card-border);
-            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .collapsible-trigger {
-            background: var(--card-border);
-            border: none;
-            color: var(--text-color);
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        .collapsible-content.open {
-            max-height: 1000px;
-        }
-
-        /* Enterprise Results Styles */
-        .enterprise-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-        }
-        .stat-card h4 {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-        .stat-card .value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        /* Depth Chart */
-        .depth-chart {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            height: 150px;
-            margin-top: 20px;
-            padding: 0 10px;
-            border-bottom: 2px solid var(--card-border);
-        }
-        .depth-bar {
-            flex: 1;
-            background: linear-gradient(to top, var(--primary-color), var(--secondary-color));
-            border-radius: 6px 6px 0 0;
-            position: relative;
-            min-width: 30px;
-        }
-        .depth-bar:hover {
-            filter: brightness(1.2);
-            cursor: help;
-        }
-        .depth-bar::after {
-            content: attr(data-count);
-            position: absolute;
-            top: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-        .depth-label {
-            text-align: center;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        .audit-table-wrapper {
-            overflow-x: auto;
-            margin: 20px 0;
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-        }
-        .audit-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .audit-table th, .audit-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--card-border);
-        }
-        .audit-table th {
-            background: rgba(16, 185, 129, 0.05);
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        .audit-table tr:last-child td { border-bottom: none; }
-        
-        .redirect-chain {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            font-size: 0.75rem;
-        }
-        .chain-hop {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .chain-hop .status {
-            color: #f59e0b;
-            font-weight: 700;
-        }
-        
-        .custom-fields {
-            padding: 10px;
-            background: rgba(139, 92, 246, 0.03);
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.75rem;
-        }
-
-    </style>
+    <link rel="stylesheet" href="/static/modern_forge.css?v=3">
 </head>
 <body>
+    <canvas id="bg-canvas"></canvas>
 
-<div class="header">
-    <div style="font-weight: 800; font-size: 1.5rem; letter-spacing: -0.1em; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
-        <span style="display: inline-block; width: 10px; height: 10px; background: var(--secondary-color); border-radius: 50%;"></span>
-        URLFORGE
+    <div class="nav-container">
+        <nav class="modern-nav">
+            <div class="nav-logo">URLFORGE</div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">Home</a>
+                <a href="#" class="nav-link">Features</a>
+                <a href="#" class="nav-link">FAQs</a>
+                <button class="nav-btn">Log In</button>
+            </div>
+        </nav>
     </div>
-    <button class="theme-toggle" id="theme-btn">
-        <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
-    </button>
-</div>
 
-<div class="hero">
-    <div class="seo-core" id="main-core"></div>
-    <h1>UrlForge</h1>
-    <p>The autonomous engine for complete site fixation. UrlForge identifies SEO loopholes, generates high-ranking pages, and optimizes your entire site for modern search and answer engines with zero effort.</p>
-</div>
+    <section class="hero-section fade-in">
+        <span class="badge">Autonomous SEO Engine</span>
+        <h1 class="hero-title">Your Complete<br>Site Fixer AI</h1>
+        <p class="hero-subtitle">UrlForge identifies SEO loopholes, generates high-ranking pages, and optimizes your entire site with zero effort. Press on the canvas to focus and interact.</p>
+    </section>
+
+    <div class="content-area">
 
 <div id="cards">
 
     <!-- FORM CARD -->
-    <div class="card result-card" id="form-card">
+    <div class="card result-card glass-card">
         
         <div class="tabs-header">
             <button class="tab-btn active" onclick="switchTab('standard-tab')">Standard Analysis</button>
@@ -830,15 +163,29 @@
                     </div>
                 </div>
 
-                <div style="border-top: 1px solid var(--card-border); margin-top: 20px; padding-top: 20px;">
-                    <button type="button" class="collapsible-trigger" onclick="toggleAdvanced(this)">
-                        <span>⚙️</span> Advanced: Access & AI
-                    </button>
-                    <div class="collapsible-content">
-                        <div class="form-group">
-                            <label>Site Access Token (Optional)</label>
-                            <input type="password" name="site_token" placeholder="Bearer or custom token">
+                <div class="ai-world-section" style="border-top: 1px solid var(--card-border); margin-top: 20px; padding-top: 20px;">
+                    <!-- DISCOVERY CARD VIEW -->
+                    <div id="ai-discovery-card" class="ai-discovery-card" onclick="revealAIForms()">
+                        <h3 class="ai-world-title">The Data World of AI ✨</h3>
+                        <div class="ai-orbit-system">
+                            <div class="orbit-ring" style="width: 140px; height: 140px; animation-duration: 8s;"></div>
+                            <div class="orbit-ring" style="width: 200px; height: 200px; animation-duration: 12s;"></div>
+                            <div class="orbit-ring" style="width: 260px; height: 260px; animation-duration: 16s;"></div>
+                            <div class="ai-core">
+                                <div class="ai-core-glow"></div>
+                                <div class="ai-eyes">
+                                    <span></span><span></span>
+                                </div>
+                            </div>
+                            <div class="planet" style="--orbit-size: 140px; --orbit-speed: 8s;"></div>
+                            <div class="planet" style="--orbit-size: 200px; --orbit-speed: 12s;"></div>
+                            <div class="planet" style="--orbit-size: 260px; --orbit-speed: 16s;"></div>
                         </div>
+                        <div class="ai-click-me">Click Me ↓</div>
+                    </div>
+
+                    <!-- AI FORMS VIEW (HIDDEN) -->
+                    <div id="ai-config-forms" class="ai-config-forms hidden">
                         <div class="form-group">
                             <label>OpenAI API Key (Optional)</label>
                             <input type="password" name="openai_key" placeholder="sk-...">
@@ -851,6 +198,11 @@
                             <label>Ollama Host (Optional)</label>
                             <input type="text" name="ollama_host" placeholder="http://localhost:11434">
                         </div>
+                        <div class="form-group">
+                            <label>Site Access Token (Optional)</label>
+                            <input type="password" name="site_token" placeholder="Bearer or custom token">
+                        </div>
+                        <button type="button" class="back-to-world" onclick="hideAIForms(event)">← Back to Data World</button>
                     </div>
                 </div>
 
@@ -880,7 +232,7 @@
 
     {% if engine_result and engine_result.pages %}
     <!-- ENTERPRISE AUDIT DASHBOARD -->
-    <div class="card result-card">
+    <div class="card result-card glass-card">
         <h2 class="section-title">Enterprise Audit Dashboard</h2>
         
         <div class="enterprise-grid">
@@ -898,7 +250,7 @@
             </div>
             <div class="stat-card">
                 <h4>SEO Score</h4>
-                <div class="value" style="color: {% if seo_score > 80 %}#10b981{% elif seo_score > 50 %}#f59e0b{% else %}#ef4444{% endif %}">{{seo_score}}</div>
+                <div class="value {% if seo_score > 80 %}stat-good{% elif seo_score > 50 %}stat-warn{% else %}stat-bad{% endif %}">{{seo_score}}</div>
             </div>
         </div>
 
@@ -913,7 +265,8 @@
             
             {% for d in range(6) %}
                 <div class="depth-wrapper" style="flex: 1; display: flex; flex-direction: column;">
-                    <div class="depth-bar" data-count="{{depth_counts[d]}}" style="height: {{ (depth_counts[d] / engine_result.pages|length * 200)|round|int if engine_result.pages|length > 0 else 0 }}px;"></div>
+                    {% set bar_h = (depth_counts[d] / engine_result.pages|length * 200)|round|int if engine_result.pages|length > 0 else 0 %}
+                    <div class="depth-bar" data-count="{{depth_counts[d]}}" style="--bar-h: {{ bar_h }}px; height: var(--bar-h);"></div>
                     <div class="depth-label">Depth {{d}}</div>
                 </div>
             {% endfor %}
@@ -939,7 +292,7 @@
                             <a href="{{p.url}}" target="_blank" title="{{p.url}}">{{p.url}}</a>
                         </td>
                         <td><span class="badge" style="font-size: 0.65rem;">{{ p.content_type.split('/')[-1]|upper }}</span></td>
-                        <td><span style="color: {% if p.status == 200 %}#10b981{% else %}#ef4444{% endif %}; font-weight: 700;">{{p.status}}</span></td>
+                        <td><span class="{% if p.status == 200 %}stat-good{% else %}stat-bad{% endif %}" style="font-weight: 700;">{{p.status}}</span></td>
                         <td>{{p.response_time_ms}}</td>
                         <td>{{p.links|length if p.links else 0}}</td>
                         <td>
@@ -975,7 +328,7 @@
     {% if is_plugin %}
     <!-- PLUGIN REPORT SUMMARY -->
     {% if is_plugin and plugin_report %}
-    <div class="card result-card">
+    <div class="card result-card glass-card">
         <h2 class="section-title">Autonomous Plugin Report</h2>
         <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
             <div>
@@ -1218,7 +571,7 @@
                 </div>
             </div>
         </div>
-        <script>
+    <script>
             // Resume polling for users who manually refreshed the page mid-deployment
             setTimeout(() => {
                 const staticDisplay = document.getElementById('status-display-static');
@@ -1282,7 +635,7 @@
 
     {% if not is_plugin %}
     <!-- OVERVIEW & SCORE CARD -->
-    <div class="card result-card">
+    <div class="card result-card glass-card">
         <h2 class="section-title">SEO Health Overview</h2>
         
         <div class="score-display">
@@ -1315,7 +668,7 @@
     </div>
 
     <!-- DEEP ANALYSIS MODULES -->
-    <div class="card result-card">
+    <div class="card result-card glass-card">
         <h2 class="section-title">Deep Audit Results</h2>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
@@ -1397,7 +750,7 @@
 
     <!-- SITEMAP FILES -->
     {% if files %}
-    <div class="card result-card">
+    <div class="card result-card glass-card">
         <h2 class="section-title">Generated Exports</h2>
         <ul>
             {% for file in files %}
@@ -1515,6 +868,17 @@
         document.body.style.setProperty("--hover-glow", document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(16, 185, 129, 0.06)' : 'rgba(16, 185, 129, 0.12)');
     });
 
+    function hideAIForms(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('ai-discovery-card').classList.remove('hidden');
+        document.getElementById('ai-config-forms').classList.add('hidden');
+    }
+
+    function revealAIForms() {
+        document.getElementById('ai-discovery-card').classList.add('hidden');
+        document.getElementById('ai-config-forms').classList.remove('hidden');
+    }
+
     function toggleAdvanced(btn) {
         const content = btn.nextElementSibling;
         content.classList.toggle('open');
@@ -1547,11 +911,19 @@
                 if (el.id !== 'form-card') el.style.display = 'none';
             });
             
+            // Cinematic Transition
+            document.body.classList.add('analytical-mode');
+            if (window.brain) {
+                window.brain.startThinking();
+            }
+
             const overlay = document.getElementById('loading-overlay');
             const submitBtn = form.querySelector('.submit-btn');
             const statusDisplay = document.getElementById('status-display');
             
             overlay.classList.remove('hidden');
+            overlay.style.background = 'transparent'; 
+            overlay.style.backdropFilter = 'none';
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.5';
             submitBtn.innerText = 'Processing...';
@@ -1573,6 +945,10 @@
                         const currentStatus = statusData.status;
                         if (currentStatus && currentStatus !== lastStatus) {
                             lastStatus = currentStatus;
+                            
+                            // Interaction with Brain Engine
+                            if (window.brain) window.brain.showCategory(currentStatus);
+
                             // Sequential update with animation
                             statusDisplay.style.opacity = '0';
                             setTimeout(() => {
@@ -1596,6 +972,14 @@
                         
                         if (statusData.state === 'completed' || statusData.state === 'pending_approval' || statusData.state === 'failed') {
                             clearInterval(pollInterval);
+                            
+                            // Return to Results Mode
+                            document.body.classList.remove('analytical-mode');
+                            document.body.classList.add('mode-results');
+                            if (window.brain) {
+                                window.brain.stopThinking();
+                            }
+
                             setTimeout(() => {
                                 window.location.href = '/results?task_id=' + taskId;
                             }, 500);
@@ -1776,9 +1160,17 @@
             formData.append('approved_actions', actionIds.join(','));
             formData.append('approved_pages', pageKeywords.join(','));
             
+            // Cinematic Transition
+            document.body.classList.add('analytical-mode');
+            if (window.brain) {
+                window.brain.startThinking();
+            }
+
             const overlay = document.getElementById('loading-overlay');
             const statusDisplay = document.getElementById('status-display');
             overlay.classList.remove('hidden');
+            overlay.style.background = 'transparent'; 
+            overlay.style.backdropFilter = 'none';
             if (statusDisplay) {
                 statusDisplay.innerText = 'Applying & Deploying approved fixes...';
             }
@@ -1797,6 +1189,13 @@
                                 const currentStatus = statusData.status;
                                 if (currentStatus && currentStatus !== lastStatus) {
                                     lastStatus = currentStatus;
+                                const currentStatus = statusData.status;
+                                if (currentStatus && currentStatus !== lastStatus) {
+                                    lastStatus = currentStatus;
+                                    
+                                    // Interaction with Brain Engine
+                                    if (window.brain) window.brain.showCategory(currentStatus);
+
                                     statusDisplay.style.opacity = '0';
                                     setTimeout(() => {
                                         statusDisplay.innerText = currentStatus;
@@ -1805,6 +1204,7 @@
                                         void statusDisplay.offsetWidth;
                                         statusDisplay.classList.add('status-fade-in');
                                     }, 300);
+                                }
                                 }
 
                                 if (statusData.state === 'error') {
@@ -1816,6 +1216,14 @@
                                 
                                 if (statusData.state === 'completed' || statusData.state === 'failed') {
                                     clearInterval(pollInterval);
+
+                                    // Return to Results Mode
+                                    document.body.classList.remove('analytical-mode');
+                                    document.body.classList.add('mode-results');
+                                    if (window.brain) {
+                                        window.brain.stopThinking();
+                                    }
+
                                     setTimeout(() => {
                                         location.reload();
                                     }, 500);
@@ -1836,5 +1244,14 @@
         });
     }
 </script>
+    </div><!-- End content-area -->
+
+    <div id="loading-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; pointer-events: none;">
+        <div id="status-display" style="color: #fff; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; text-align: center; text-transform: uppercase; text-shadow: 0 0 20px rgba(255,255,255,0.5); opacity: 0; transition: opacity 0.3s ease; margin-top: 200px;">
+            Connecting to UrlForge...
+        </div>
+    </div>
+    
+    <script src="/static/brain_engine.js"></script>
 </body>
 </html>
