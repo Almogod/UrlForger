@@ -1,91 +1,46 @@
-````markdown
-# URL Forger
+# UrlForge | Autonomous SEO Engine
 
-A local tool to generate, normalize, and repair URLs for AI-generated or dynamically created websites. It helps ensure clean, consistent, and crawlable URL structures, improving SEO and usability.
+UrlForge is a professional utility designed to identify, normalize, and repair URL structures for modern websites. It specializes in hardening SEO foundations by ensuring clean, consistent, and crawlable site architectures—especially for AI-generated or dynamically scaled platforms.
 
-## Usage
+## Core Features
 
-```bash
-python main.py
-````
+*   **Autonomous SEO Auditing**: Deep-scans site structures to identify "loopholes" such as broken internal links, malformed paths, and keyword gaps.
+*   **Intelligent URL Normalization**: Automatically repairs malformed or inconsistent links (standardizing casing, trailing slashes, and removing redundant query parameters).
+*   **Keyword-Driven Page Generation**: Analyzes competitor domains and search intent to generate new, high-ranking pages that fill specific content voids.
+*   **Enterprise-Grade Crawling**: Features a high-concurrency crawler capable of scanning HTML as well as deep assets (CSS, JS, PDFs) to ensure site-wide integrity.
+*   **Automated Deployment**: Seamlessly applies SEO fixes and pushes new generated content back to the host repository or site.
 
-## Features
+## How It Helps You
 
-* Generate structured URLs from raw or inconsistent inputs
-* Normalize malformed or AI-generated links
-* Remove duplicate or redundant URL patterns
-* Clean query parameters and fragments
-* Enforce consistent URL formatting (trailing slashes, casing, etc.)
-* Validate URL structure for SEO compatibility
-* Prepare URLs for sitemap generation or crawling pipelines
+### 1. Hardening SEO Foundations
+By enforcing strict URL normalization, UrlForge eliminates "duplicate content" issues caused by inconsistent link patterns (e.g., mixing `/page` and `/page/`). This ensures search engine bots prioritize your most important URLs.
 
-## How It Works
+### 2. Identifying Content Gaps
+The engine doesn't just find errors; it finds opportunities. By comparing your site against competitors, it identifies high-value keywords you are missing and prepares optimized pages to target them.
 
-1. **Input Collection**
-   Accepts raw URLs or extracted links from a website or dataset.
+### 3. Improving Crawl Efficiency
+Broken links and deep-nested redirects waste "crawl budget." UrlForge identifies these bottlenecks, allowing you to fix them and ensure that bots can index your content faster and more effectively.
 
-2. **Parsing & Analysis**
-   Breaks URLs into components (path, query, fragments).
+### 4. Cleaning AI-Generated Links
+AI-generated content often produces inconsistent or "hallucinated" internal linking structures. UrlForge acts as a filter, validating and cleaning these links before they impact your site's reputation.
 
-3. **Cleaning & Normalization**
+## Usage & Workflow
 
-   * Removes invalid characters
-   * Standardizes casing and separators
-   * Fixes broken or incomplete URLs
+1.  **Initialize the Engine**:
+    ```bash
+    python -m uvicorn app:app --reload
+    ```
+2.  **Run Autonomous Analysis**: Input your site URL and competitor domains. Use the "Autonomous Plugin" to start a deep audit.
+3.  **Review SEO Loopholes**: Inspect the identified broken links and malformed structures.
+4.  **Approve & Deploy**: Select the recommended fixes and generated content to push them live to your site.
 
-4. **Deduplication**
-   Identifies and removes duplicate or equivalent URLs.
+## Project Architecture
 
-5. **Output Generation**
-   Produces a clean list of optimized URLs ready for crawling or sitemap generation.
+*   `app.py`: The central engine and API entry point.
+*   `src/crawler_engine/`: Logic for high-concurrency site scanning.
+*   `src/automation/`: Modules for SEO repair and content generation.
+*   `static/`: Core performance-optimized assets.
+*   `templates/`: The interactive audit dashboard.
 
-## Project Structure
-
-```text
-UrlForger/
-│── main.py              # Entry point
-│── engine/              # Core processing logic
-│── utils/               # Helper functions (parsing, validation)
-│── data/                # Input/output data (optional)
-│── requirements.txt     # Dependencies
-│── README.md            # Documentation
-```
-
-## Installation
-
-```bash
-git clone https://github.com/Almogod/UrlForger.git
-cd UrlForger
-pip install -r requirements.txt
-```
-
-## Example Workflow
-
-```bash
-python main.py --input urls.txt --output clean_urls.txt
-```
-
-### Input
-
-```text
-https://example.com/Page?id=123
-https://example.com/page/
-https://example.com/page
-```
-
-### Output
-
-```text
-https://example.com/page/
-```
-
-## Use Cases
-
-* Cleaning AI-generated website links
-* Preparing URLs for SEO optimization
-* Preprocessing data for sitemap generation
-* Fixing inconsistent internal linking structures
-* Improving crawl efficiency for bots
-* Generating pages on the ranking keywords in category
-```
-```
+---
+*UrlForge - Optimizing site architecture for the age of AI.*
