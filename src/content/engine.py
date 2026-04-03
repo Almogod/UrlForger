@@ -11,7 +11,6 @@ from src.content.page_generator import generate_page
 from src.content.stopwords import STOPWORDS, filter_stopwords_min_length
 from src.services.competitor_discovery import discover_competitors
 from src.utils.logger import logger
-from src.utils.logger import logger
 import re
 from collections import Counter
 
@@ -19,72 +18,65 @@ from collections import Counter
 def run_content_engine(site_pages, competitor_urls, llm_config, limit=3, domain=None):
     """
     Full content-gap pipeline:
-      1. Extract keywords from site_pages (using comprehensive stopwords).
-      2. Auto-discover competitors if none provided.
-      3. Extract keywords from competitor content.
-      4. Find gaps (keywords competitors target that the site lacks).
-      5. Return gap analysis with actionable recommendations.
+      1. ALWAYS extract keywords from site_pages first.
+      2. If competitors provided, run gap analysis.
+      3. Return ranked keywords + gaps + recommendations.
     """
     logger.info("Content Generation Engine started")
 
-    if not competitor_urls:
-        logger.info("No competitors provided. Skipping competitor gap analysis.")
-        return {
-            "keyword_gap": {},
-            "site_keywords": [],
-            "site_bigrams": [],
-            "recommendations": []
-        }
-
-    # ── Extract site keywords (unigrams + bigrams) ────────────────────
+    # ── ALWAYS extract site keywords (unigrams + bigrams) ─────────────
     site_keywords = _extract_bulk_keywords(site_pages)
     site_bigrams = _extract_bulk_bigrams(site_pages)
-    all_site_terms = site_keywords | site_bigrams
-
-    # ── Gap analysis against competitors ──────────────────────────────
-    gaps = {}
-    for comp_url in competitor_urls[:5]:
-        try:
-            from src.content.competitor_analyzer import _fetch_page, _tokenize, _extract_ngrams
-            page_html = _fetch_page(comp_url)
-            if page_html:
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(page_html, "lxml")
-                text = soup.get_text(" ", strip=True)
-                tokens = _tokenize(text)
-                unigrams = set(tokens)
-                bigrams = set(_extract_ngrams(tokens, 2))
-                comp_terms = unigrams | bigrams
-
-                gap_terms = [t for t in comp_terms if t not in all_site_terms and len(t) > 4]
-                # Rank by relevance (longer terms = more specific = more valuable)
-                gap_terms.sort(key=lambda x: len(x), reverse=True)
-                if gap_terms:
-                    gaps[comp_url] = gap_terms[:10]
-            else:
-                # Fallback simulated gap (keeps the pipeline running)
-                fallback_gaps = [
-                    "content strategy", "search optimization", "digital marketing",
-                    "link building", "audience engagement", "conversion rate",
-                    "organic traffic", "keyword research", "content marketing",
-                ]
-                site_gap = [g for g in fallback_gaps if g not in all_site_terms]
-                if site_gap:
-                    gaps[comp_url] = site_gap[:5]
-        except Exception as e:
-            logger.warning(f"Failed to analyze competitor {comp_url}: {e}")
-            continue
-
 
     # Rank site keywords by frequency
     site_kw_counts = sorted(site_keywords.items(), key=lambda x: x[1], reverse=True)
     site_bg_counts = sorted(site_bigrams.items(), key=lambda x: x[1], reverse=True)
 
+    prime_keywords = [kw for kw, _ in site_kw_counts[:10]]
+
+    logger.info(f"Extracted {len(site_keywords)} unigrams, {len(site_bigrams)} bigrams, top prime: {prime_keywords[:5]}")
+
+    # ── Optional: Gap analysis against competitors ────────────────────
+    gaps = {}
+    if competitor_urls:
+        all_site_terms = set(site_keywords.keys()) | set(site_bigrams.keys())
+        for comp_url in competitor_urls[:5]:
+            try:
+                from src.content.competitor_analyzer import _fetch_page, _tokenize, _extract_ngrams
+                page_html = _fetch_page(comp_url)
+                if page_html:
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(page_html, "lxml")
+                    text = soup.get_text(" ", strip=True)
+                    tokens = _tokenize(text)
+                    unigrams = set(tokens)
+                    bigrams = set(_extract_ngrams(tokens, 2))
+                    comp_terms = unigrams | bigrams
+
+                    gap_terms = [t for t in comp_terms if t not in all_site_terms and len(t) > 4]
+                    gap_terms.sort(key=lambda x: len(x), reverse=True)
+                    if gap_terms:
+                        gaps[comp_url] = gap_terms[:10]
+                else:
+                    fallback_gaps = [
+                        "content strategy", "search optimization", "digital marketing",
+                        "link building", "audience engagement", "conversion rate",
+                        "organic traffic", "keyword research", "content marketing",
+                    ]
+                    site_gap = [g for g in fallback_gaps if g not in all_site_terms]
+                    if site_gap:
+                        gaps[comp_url] = site_gap[:5]
+            except Exception as e:
+                logger.warning(f"Failed to analyze competitor {comp_url}: {e}")
+                continue
+    else:
+        logger.info("No competitors provided. Skipping gap analysis, using site keywords only.")
+
     return {
         "keyword_gap": gaps,
         "site_keywords": [kw for kw, _ in site_kw_counts[:30]],
         "site_bigrams": [bg for bg, _ in site_bg_counts[:20]],
-        "prime_keywords": [kw for kw, _ in site_kw_counts[:10]],
+        "prime_keywords": prime_keywords,
         "recommendations": [
             {"keyword": kw, "source": url}
             for url, kws in gaps.items()

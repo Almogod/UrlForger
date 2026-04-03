@@ -1,8 +1,8 @@
 # src/content/faq_generator.py
 """
-Robust AI FAQ Generator for sitewide SERP optimization.
-Extracts core topics and user-intent patterns to generate high-value,
-structured Q&A based on Google's E-E-A-T and helpful content guidelines.
+Keyword-driven FAQ Generator for sitewide SERP optimization.
+Generates FAQs directly from the site's discovered prime keywords,
+ensuring every question targets real search intent for that domain.
 """
 
 import re
@@ -12,62 +12,67 @@ from src.utils.logger import logger
 from src.content.stopwords import STOPWORDS
 from src.content.content_schema import FAQItem
 
-def generate_site_faqs(pages, domain, llm_config) -> list[FAQItem]:
+
+def generate_site_faqs(site_keywords, domain, llm_config):
     """
-    Generate a robust list of 6-8 FAQItems based on the site's content.
-    Ensures high-quality, citation-worthy Q&A.
+    Generate 6-8 FAQs based on the actual keywords found on the site.
+    
+    Args:
+        site_keywords: list of keyword strings (already ranked by importance)
+        domain: the site's domain name
+        llm_config: LLM configuration dict
+    
+    Returns:
+        list of FAQItem objects
     """
-    logger.info(f"Generating robust site FAQs for {domain}")
+    logger.info(f"Generating keyword-driven FAQs for {domain} from {len(site_keywords)} keywords")
     
-    # 1. Extract core topics and common user-intent queries
-    topics = []
-    for p in pages:
-        titles = f"{p.get('title', '')} {' '.join(p.get('headings', []))}"
-        words = re.sub(r"[^a-zA-Z0-9\s]", " ", titles).lower().split()
-        filtered = [w for w in words if w not in STOPWORDS and len(w) > 3]
-        topics.extend(filtered)
-    
-    if not topics:
-        topics = ["services", "solutions", "technology", "support"]
-        
-    top_topics = [t for t, count in Counter(topics).most_common(12)]
-    
+    if not site_keywords:
+        logger.warning("No site keywords provided for FAQ generation")
+        return []
+
     faqs = []
     has_api = bool(llm_config.get("api_key")) or llm_config.get("provider") == "ollama"
 
     if has_api:
-        faqs = _generate_faqs_with_llm(top_topics, domain, llm_config)
+        faqs = _generate_faqs_with_llm(site_keywords, domain, llm_config)
     
     if not faqs:
-        faqs = _generate_faqs_builtin(top_topics, domain)
+        faqs = _generate_faqs_builtin(site_keywords, domain)
 
-    # 4. Final step: Normalize all to FAQItem model for strict schema adherence
+    # Validate and normalize all to strict FAQItem model
     robust_faqs = []
     for item in faqs:
         if isinstance(item, dict) and "question" in item and "answer" in item:
-            # Basic validation
-            if len(item["question"]) > 10 and len(item["answer"]) > 20:
-                robust_faqs.append(FAQItem(question=item["question"], answer=item["answer"]))
+            q = str(item["question"]).strip()
+            a = str(item["answer"]).strip()
+            if len(q) > 10 and len(a) > 20:
+                robust_faqs.append(FAQItem(question=q, answer=a))
     
+    logger.info(f"Generated {len(robust_faqs)} validated FAQs for {domain}")
     return robust_faqs
 
-def _generate_faqs_with_llm(topics, domain, llm_config):
-    """Call LLM with an engineered prompt for high-quality citation FAQs."""
+
+def _generate_faqs_with_llm(keywords, domain, llm_config):
+    """Call LLM with the actual site keywords for targeted FAQ generation."""
     from src.content.page_generator import _call_openai, _call_gemini, _call_ollama
     
-    prompt = f"""
-    You are an expert SEO content strategist for '{domain}'.
-    Based on these core topics found on the site: {', '.join(topics)}, 
-    generate 7 high-impact, citation-worthy FAQ questions and answers.
-    
-    STRATEGY:
-    - Target "Featured Snippets" and "People Also Ask" (PAA) intent.
-    - Focus on authoritative, factual answers (E-E-A-T).
-    - Use "Who, What, How, Why, Is" patterns.
-    - Keep answers concise but comprehensive (40-60 words).
-    
-    Strictly format your response as a valid JSON array of objects with "question" and "answer" fields ONLY.
-    """
+    kw_list = ', '.join(keywords[:10])
+    prompt = f"""You are an expert SEO content strategist.
+
+The website '{domain}' has the following primary keywords discovered from its content:
+{kw_list}
+
+Generate exactly 7 FAQ questions and answers specifically about these keywords.
+Each FAQ MUST directly reference one or more of the keywords above.
+
+RULES:
+- Questions must use "What", "How", "Why", "Is", "Can", "Does" patterns
+- Answers must be 40-60 words, factual, and authoritative (E-E-A-T compliant)
+- Each answer must naturally include the keyword it targets
+- Do NOT generate generic business questions - every FAQ must be keyword-specific
+
+Respond with ONLY a valid JSON array of objects with "question" and "answer" fields. No other text."""
     
     provider = llm_config.get("provider", "openai").lower()
     raw = None
@@ -82,40 +87,63 @@ def _generate_faqs_with_llm(topics, domain, llm_config):
         if raw:
             match = re.search(r"\[.*\]", raw, re.DOTALL)
             if match:
-                return json.loads(match.group(0))
+                parsed = json.loads(match.group(0))
+                logger.info(f"LLM generated {len(parsed)} FAQs for {domain}")
+                return parsed
     except Exception as e:
-        logger.warning(f"Robust FAQ LLM generation failed for {domain}: {e}")
+        logger.warning(f"FAQ LLM generation failed for {domain}: {e}")
     return []
 
-def _generate_faqs_builtin(topics, domain):
-    """High-quality fallback engine with pattern-aware template generation."""
+
+def _generate_faqs_builtin(keywords, domain):
+    """
+    Generate FAQs directly from the site's keywords using intent-aware templates.
+    Each keyword gets its own targeted question.
+    """
     faqs = []
-    # Mix topics to create believable, non-generic questions
-    templates = [
-        ("What core services does {domain} provide regarding {topic}?", 
-         "At {domain}, we specialize in delivering high-volume {topic} solutions tailored for enterprise scalability and individual precision. Our approach focuses on reliability and modern performance standards."),
-        
-        ("How does {domain} implement {topic} for maximum efficiency?", 
-         "We utilize advanced {topic} frameworks that integrate seamlessly with your existing stack. By prioritizing optimized workflows, {domain} ensures that every implementation meets your strategic goals."),
-        
-        ("Why is {topic} considered a critical component of {domain}'s strategy?", 
-         "{topic} is central to our mission of providing state-of-the-art results. It allows us to maintain a competitive edge and ensure that our clients receive the most up-to-date innovations in the field."),
-        
-        ("Are the {topic} solutions at {domain} secure and compliant?", 
-         "Security is our top priority. Every {topic} integration follows strict industry-standard protocols and encryption, ensuring that your data and operations are always protected under the latest compliance guidelines."),
-        
-        ("Can {domain} customize {topic} features for specific niches?", 
-         "Absolutely. We pride ourselves on the flexibility of our {topic} offerings. Our engineering team works closely with you to adapt these features to the unique requirements of your industry or specific use case."),
-        
-        ("What sets {domain}'s approach to {topic} apart from competitors?", 
-         "Our edge lies in the combination of deep domain expertise in {topic} and an obsessive focus on user experience. Unlike generic alternatives, {domain} builds for long-term sustainability and performance.")
+    
+    # Intent-aware question templates - each one targets a specific keyword
+    question_patterns = [
+        {
+            "q": "What is {keyword} and why is it important for {domain}?",
+            "a": "{keyword} is a core focus area for {domain}. It represents a key capability that drives value for users by providing specialized solutions, expert guidance, and measurable results in this domain."
+        },
+        {
+            "q": "How does {domain} approach {keyword} differently?",
+            "a": "{domain} takes a data-driven approach to {keyword}, combining industry best practices with proprietary techniques. This methodology ensures consistent, high-quality outcomes that exceed standard expectations in the field."
+        },
+        {
+            "q": "Why should users choose {domain} for {keyword} solutions?",
+            "a": "{domain} has built deep expertise in {keyword} through extensive practical experience. Users benefit from optimized workflows, transparent processes, and results that are specifically tailored to their unique requirements."
+        },
+        {
+            "q": "Can {keyword} be customized for specific use cases at {domain}?",
+            "a": "Yes, {domain} offers fully customizable {keyword} implementations. Every solution is adapted to match the client's specific industry, scale, and performance targets for maximum effectiveness and ROI."
+        },
+        {
+            "q": "What results can users expect from {keyword} at {domain}?",
+            "a": "Users implementing {keyword} through {domain} typically see measurable improvements in efficiency, performance, and user satisfaction. Results are tracked through comprehensive analytics and continuous optimization cycles."
+        },
+        {
+            "q": "Is {keyword} support available for enterprise clients at {domain}?",
+            "a": "{domain} provides enterprise-grade {keyword} support including dedicated account management, priority response times, custom integrations, and scalable infrastructure to handle any volume of operations."
+        },
+        {
+            "q": "How does {keyword} integrate with other services offered by {domain}?",
+            "a": "{keyword} seamlessly connects with the full suite of {domain} services. This integrated approach ensures data consistency, streamlined workflows, and a unified experience across all touchpoints and platforms."
+        },
     ]
     
-    for i, (q_tpl, a_tpl) in enumerate(templates):
-        topic = topics[i % len(topics)].capitalize()
-        # Ensure we don't repeat the same topic for consecutive questions
+    # Assign each keyword to a question pattern
+    for i, pattern in enumerate(question_patterns):
+        kw = keywords[i % len(keywords)].capitalize()
         faqs.append({
-            "question": q_tpl.format(topic=topic, domain=domain),
-            "answer": a_tpl.format(topic=topic, domain=domain)
+            "question": pattern["q"].format(keyword=kw, domain=domain),
+            "answer": pattern["a"].format(keyword=kw, domain=domain)
         })
+        
+        # Stop after covering enough keywords (max 7 FAQs)
+        if len(faqs) >= min(7, max(len(keywords), 5)):
+            break
+    
     return faqs
