@@ -382,8 +382,29 @@
     {% if is_plugin %}
     <!-- PLUGIN REPORT SUMMARY -->
     {% if is_plugin and plugin_report %}
-    <div class="card result-card glass-card">
-        <h2 class="section-title">Autonomous Plugin Report</h2>
+    <div class="card result-card glass-card" style="position: relative; overflow: hidden;">
+        <!-- RESTORED BRANDING: THE DATA WORLD OF AI -->
+        <div class="ai-world-section" style="position: absolute; top: -50px; right: -50px; opacity: 0.15; pointer-events: none; transform: scale(0.6);">
+            <div class="ai-orbit-system">
+                <div class="orbit-ring" style="width: 140px; height: 140px; animation-duration: 8s;"></div>
+                <div class="orbit-ring" style="width: 200px; height: 200px; animation-duration: 12s;"></div>
+                <div class="orbit-ring" style="width: 260px; height: 260px; animation-duration: 16s;"></div>
+                <div class="ai-core">
+                    <div class="ai-core-glow"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+            <svg style="width: 32px; height: 32px; color: var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            <h2 class="section-title" style="margin: 0;">Autonomous Plugin Report</h2>
+        </div>
+
+        <div style="margin-bottom: 30px; position: relative; z-index: 1;">
+            <h3 class="ai-world-title" style="font-size: 1.1rem; margin-bottom: 10px; opacity: 0.8;">The Data World of AI ✨</h3>
+        </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
             <div>
                 <p><b>Target:</b> {{plugin_report.site_url}}</p>
@@ -434,6 +455,26 @@
             </table>
             {% else %}
             <p style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;">No keyword gaps automatically discovered. Use the manual entry above to target new terms.</p>
+            {% endif %}
+        </div>
+
+        <!-- NEW SECTION: KEYWORDS FOUND -->
+        <div class="review-section" style="margin-top: 30px; border-top: 1px solid var(--card-border); padding-top: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <h3 style="font-weight: 600;">Keywords Found</h3>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">{{ site_keywords|length }} Detected</span>
+            </div>
+            
+            {% if site_keywords %}
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                {% for kw in site_keywords %}
+                <div style="background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--card-border); font-size: 0.85rem; color: var(--text-muted);">
+                    {{ kw }}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;">No keywords specifically mapped to the brand yet.</p>
             {% endif %}
         </div>
 
@@ -516,7 +557,7 @@
         </div>
 
         <!-- AUTH FORM (HIDDEN UNTIL APPROVED) -->
-        <div id="auth-section" class="approved-only review-section" style="border-color: #f59e0b;">
+        <div id="auth-section" class="approved-only review-section" style="border-color: #f59e0b; display: none;">
             <h3 style="color: #f59e0b;">Step 2: Grant Website Access</h3>
             <p style="color: var(--text-muted); margin-bottom: 20px;">To apply these changes, please provide deployment credentials.</p>
             
@@ -1365,6 +1406,14 @@
                 overlay.classList.add('hidden');
             }
         });
+    }
+
+    function showAuthForm() {
+        const authSection = document.getElementById('auth-section');
+        if (authSection) {
+            authSection.style.display = 'block';
+            authSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 </script>
     </div><!-- End content-area -->
