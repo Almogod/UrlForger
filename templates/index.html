@@ -477,6 +477,26 @@
             <p style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;">No keywords specifically mapped to the brand yet.</p>
             {% endif %}
         </div>
+        <!-- NEW SECTION: SITE FAQS (RICH CITATIONS) -->
+        <div class="review-section" style="margin-top: 30px; margin-bottom: 40px; border-top: 1px solid var(--card-border); padding-top: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <h3 style="font-weight: 600;">AI-Powered Site FAQs</h3>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">Rich Results Ready</span>
+            </div>
+            
+            {% if plugin_report.site_faqs %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for faq in plugin_report.site_faqs %}
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px;">
+                    <p style="font-weight: 700; color: #fff; margin-bottom: 8px; font-size: 0.95rem;">Q: {{ faq.question }}</p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0;">{{ faq.answer }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted); font-style: italic; font-size: 0.9rem;">Crunching domain patterns to generate citation-focused FAQs...</p>
+            {% endif %}
+        </div>
 
         {% if plugin_report.state == 'pending_approval' %}
         <div class="review-section" id="review-area">

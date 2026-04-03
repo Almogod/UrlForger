@@ -11,6 +11,7 @@ from src.content.page_generator import generate_page
 from src.content.stopwords import STOPWORDS, filter_stopwords_min_length
 from src.services.competitor_discovery import discover_competitors
 from src.utils.logger import logger
+from src.utils.logger import logger
 import re
 from collections import Counter
 
@@ -74,10 +75,16 @@ def run_content_engine(site_pages, competitor_urls, llm_config, limit=3, domain=
             logger.warning(f"Failed to analyze competitor {comp_url}: {e}")
             continue
 
+
+    # Rank site keywords by frequency
+    site_kw_counts = sorted(site_keywords.items(), key=lambda x: x[1], reverse=True)
+    site_bg_counts = sorted(site_bigrams.items(), key=lambda x: x[1], reverse=True)
+
     return {
         "keyword_gap": gaps,
-        "site_keywords": list(site_keywords)[:30],
-        "site_bigrams": list(site_bigrams)[:20],
+        "site_keywords": [kw for kw, _ in site_kw_counts[:30]],
+        "site_bigrams": [bg for bg, _ in site_bg_counts[:20]],
+        "prime_keywords": [kw for kw, _ in site_kw_counts[:10]],
         "recommendations": [
             {"keyword": kw, "source": url}
             for url, kws in gaps.items()
@@ -86,8 +93,8 @@ def run_content_engine(site_pages, competitor_urls, llm_config, limit=3, domain=
     }
 
 
-def _extract_bulk_keywords(pages) -> set:
-    """Extract meaningful unigram keywords from page data."""
+def _extract_bulk_keywords(pages) -> Counter:
+    """Extract and count meaningful unigram keywords from page data."""
     tokens = []
     for p in pages:
         text = f"{p.get('url', '')} {p.get('title', '')} {p.get('meta_description', '')}"
@@ -98,11 +105,11 @@ def _extract_bulk_keywords(pages) -> set:
             if len(w) > 4 and w not in STOPWORDS
         ]
         tokens.extend(words)
-    return set(tokens)
+    return Counter(tokens)
 
 
-def _extract_bulk_bigrams(pages) -> set:
-    """Extract meaningful bigram phrases from page data."""
+def _extract_bulk_bigrams(pages) -> Counter:
+    """Extract and count meaningful bigram phrases from page data."""
     bigrams = []
     for p in pages:
         text = f"{p.get('title', '')} {p.get('meta_description', '')}"
@@ -111,7 +118,7 @@ def _extract_bulk_bigrams(pages) -> set:
         words = [w for w in text.split() if len(w) > 3 and w not in STOPWORDS]
         for i in range(len(words) - 1):
             bigrams.append(f"{words[i]} {words[i+1]}")
-    return set(bigrams)
+    return Counter(bigrams)
 
 
 def generate_content_for_keyword(keyword, competitor_urls, llm_config, existing_pages=None):

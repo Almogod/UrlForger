@@ -153,24 +153,46 @@ def run_plugin(
                 report["content_generation_available"] = bool(keyword_gaps)
                 report["keyword_recommendations"] = keyword_gaps
                 report["existing_pages_list"] = existing_pages_list
+
+                # ── AI FAQ Generation (Sitewide Citations) ────────
+                progress("Generating sitewide AI FAQs for citation...")
+                from src.content.faq_generator import generate_site_faqs
+                site_faqs = generate_site_faqs(context_data["pages"], context_data["domain"], llm_config)
+                report["site_faqs"] = site_faqs
+                progress(f"Generated {len(site_faqs)} FAQs for search citation.")
                 
-                # ── Priority Content Generation (from target_keyword) ────────
+                # ── Proactive Content Generation (Auto-Pilot) ────────
+                all_keywords_to_gen = []
                 if target_keyword:
-                    progress(f"Priority Content Generation: '{target_keyword}'")
+                    all_keywords_to_gen.append(target_keyword)
+                
+                # Automatically pick top 3 gap keywords for proactive discovery
+                for rec in keyword_gaps[:3]:
+                    if rec["keyword"] not in all_keywords_to_gen:
+                        all_keywords_to_gen.append(rec["keyword"])
+                
+                # Also pick 2 "prime" existing keywords to strengthen current content
+                prime_kws = content_res.get("prime_keywords", [])
+                for pk in prime_kws[:2]:
+                    if pk not in all_keywords_to_gen:
+                        all_keywords_to_gen.append(pk)
+
+                for kw in all_keywords_to_gen:
+                    progress(f"Auto-generating page for: '{kw}'")
                     from src.content.engine import generate_content_for_keyword
-                    priority_page = generate_content_for_keyword(
-                        target_keyword, 
+                    page_result = generate_content_for_keyword(
+                        kw, 
                         competitors, 
                         llm_config, 
                         existing_pages=existing_pages_list
                     )
-                    if "error" not in priority_page:
-                        priority_page["keyword"] = target_keyword
-                        report["pages_generated"].append(priority_page)
-                        progress(f"Priority page generated for '{target_keyword}'")
+                    if "error" not in page_result:
+                        page_result["keyword"] = kw
+                        report["pages_generated"].append(page_result)
+                        progress(f"Generated SEO page for '{kw}'")
                     else:
-                        progress(f"Priority generation failed: {priority_page.get('error')}")
-                        report["errors"].append({"phase": "priority_gen", "keyword": target_keyword, "error": priority_page.get("error")})
+                        progress(f"Auto-generation failed for '{kw}': {page_result.get('error')}")
+                        report["errors"].append({"phase": "auto_gen", "keyword": kw, "error": page_result.get("error")})
 
         if dry_run:
             progress("Dry run complete. No changes would be applied.")
