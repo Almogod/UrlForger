@@ -756,7 +756,7 @@
         <h3 style="color: var(--error-color); margin-top: 20px;">Execution Errors</h3>
         <ul style="color: var(--text-muted); font-size: 0.85rem;">
             {% for err in plugin_report.errors %}
-                <li>{{err.error}} ({{err.url or err.keyword}})</li>
+                <li>{{err.error}}{% if err.url or err.keyword %} ({{err.url or err.keyword}}){% elif err.phase %} [{{err.phase}}]{% endif %}</li>
             {% endfor %}
         </ul>
         {% endif %}

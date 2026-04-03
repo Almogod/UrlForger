@@ -157,7 +157,8 @@ def run_plugin(
                 # ── AI FAQ Generation (Sitewide Citations) ────────
                 progress("Generating sitewide AI FAQs for citation...")
                 from src.content.faq_generator import generate_site_faqs
-                site_faqs = generate_site_faqs(context_data["pages"], context_data["domain"], llm_config)
+                site_keywords_for_faq = content_res.get("site_keywords", [])
+                site_faqs = generate_site_faqs(site_keywords_for_faq, context_data["domain"], llm_config)
                 report["site_faqs"] = [faq.model_dump() for faq in site_faqs]
                 progress(f"Generated {len(site_faqs)} FAQs for search citation.")
                 

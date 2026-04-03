@@ -144,10 +144,15 @@ async def approve_plugin_fixes(
     data: PluginApproveRequest,
     background_tasks: BackgroundTasks
 ):
-    deploy_config = data.deploy_config.dict() if data.deploy_config else {}
-    for k, v in deploy_config.items():
-        if hasattr(v, "get_secret_value"):
-            deploy_config[k] = v.get_secret_value()
+    deploy_config = {}
+    if data.deploy_config:
+        # Use model_dump to get raw values, then reveal any SecretStr fields
+        raw = data.deploy_config.model_dump()
+        for k, v in raw.items():
+            if hasattr(v, "get_secret_value"):
+                deploy_config[k] = v.get_secret_value()
+            elif v is not None:
+                deploy_config[k] = v
 
     report = task_store.get_results(data.task_id) or {}
     llm_config = report.get("llm_config")
