@@ -35,14 +35,24 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
             from src.crawler_engine.scheduler import run_workers
             from src.crawler_engine.graph import CrawlGraph
             
-            if crawler_backend == "sqlite":
-                frontier = SQLiteURLFrontier(base_domain=domain)
-            else:
-                frontier = URLFrontier(base_domain=domain)
-                
+            frontier = URLFrontier(base_domain=domain)
             frontier.add(domain)
             graph = CrawlGraph()
-            
+
+            # Seed from sitemap FIRST — critical for JS/SPA sites whose homepage has no static links
+            task_store.set_status(task_id, "Fetching sitemap to seed crawl frontier...")
+            try:
+                sitemap_urls = get_sitemap_urls(domain)
+                seeded = 0
+                for url in sitemap_urls:
+                    frontier.add(url)
+                    seeded += 1
+                if seeded:
+                    logger.info(f"Seeded {seeded} URLs from sitemap into frontier.")
+            except Exception as sitemap_err:
+                logger.warning(f"Sitemap seed failed: {sitemap_err}")
+                sitemap_urls = []
+
             # Create a simple background progress thread or just update status here initially
             task_store.set_status(task_id, f"Initializing Enterprise Crawl ({limit} pages)...")
             
@@ -51,8 +61,13 @@ def run_analysis_task(task_id: str, domain: str, limit: int, use_js: bool, fix_c
                 
             pages = asyncio.run(run_workers(frontier, extract_links, graph, start_url=domain, progress_callback=p_callback, limit=limit, delay=delay, check_robots=check_robots, broken_links_only=broken_links_only, max_depth=max_depth, crawl_assets=crawl_assets, concurrency=concurrency, custom_selectors=custom_selectors, user_agent=user_agent))
         
-        task_store.set_status(task_id, f"Crawler finished, harvested {len(pages)} pages. Checking sitemap...")
-        sitemap_urls = get_sitemap_urls(domain)
+        task_store.set_status(task_id, f"Crawl phase complete — {len(pages)} pages harvested. Running SEO audit...")
+        # Supplement with any sitemap URLs that weren't crawled (up to limit)
+        try:
+            if not sitemap_urls:
+                sitemap_urls = get_sitemap_urls(domain)
+        except Exception:
+            sitemap_urls = []
         for url in sitemap_urls:
             if len(pages) >= limit: break
             if not any(p["url"] == url for p in pages):

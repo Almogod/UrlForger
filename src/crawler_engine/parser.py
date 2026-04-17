@@ -21,11 +21,18 @@ def extract_links(html, base_url, custom_selectors=None):
     if can_tag:
         canonical = urljoin(base_url, can_tag["href"])
 
-    # 1. Links
+    # 1. Links (strip fragments — #anchor variants of the same page are NOT separate pages)
     for a in soup.find_all("a", href=True):
-        url = urljoin(base_url, a["href"])
-        if urlparse(url).scheme.startswith("http"):
-            links.append(url)
+        href = a["href"]
+        # Skip pure anchor links and mailto/tel
+        if href.startswith("#") or href.startswith("mailto:") or href.startswith("tel:"):
+            continue
+        url = urljoin(base_url, href)
+        parsed = urlparse(url)
+        # Strip fragment to avoid crawling the same page N times for N anchors
+        url_no_frag = parsed._replace(fragment="").geturl()
+        if parsed.scheme.startswith("http"):
+            links.append(url_no_frag)
 
     # 2. Assets (CSS/JS)
     for link in soup.find_all("link", rel="stylesheet", href=True):
