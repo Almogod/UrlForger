@@ -46,11 +46,18 @@ def _parse_sitemap(text: str, base_url: str, depth: int = 0, max_depth: int = 3)
                         urls.extend(_parse_sitemap(sub_text, sub_url, depth + 1, max_depth))
         else:
             # Regular urlset — contains actual page URLs
+            SKIP_EXT = (
+                ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
+                ".pdf", ".mp4", ".mp3", ".wav", ".ogg",
+                ".css", ".js", ".ico", ".woff", ".woff2", ".ttf",
+                ".zip", ".gz", ".xml",
+            )
             for loc in soup.find_all("loc"):
                 url = loc.text.strip()
                 parsed = urlparse(url)
-                # Only include http/https, non-sitemap URLs
-                if parsed.scheme.startswith("http") and not url.endswith((".xml", ".xml.gz")):
+                url_lower = parsed.path.lower()
+                # Only include http/https page URLs — skip binary assets and sitemap files
+                if parsed.scheme.startswith("http") and not any(url_lower.endswith(ext) for ext in SKIP_EXT):
                     urls.append(url)
 
     except Exception as e:

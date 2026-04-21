@@ -35,57 +35,59 @@ async def fetch(client, url, retries=5, backoff_factor=2.0, follow_redirects=Tru
             }
             
             t0 = time.time()
-            response = await client.get(url, headers=headers, follow_redirects=follow_redirects)
-            t1 = time.time()
+            async with client.stream("GET", url, headers=headers, follow_redirects=follow_redirects) as response:
+                t1 = time.time()
 
-            # Handle 429 Too Many Requests
-            if response.status_code == 429:
-                retry_after = response.headers.get("Retry-After")
-                if retry_after:
-                    try:
-                        wait_time = int(retry_after)
-                    except ValueError:
-                        # Sometimes it's a date
-                        wait_time = 5
+                # Handle 429 Too Many Requests
+                if response.status_code == 429:
+                    retry_after = response.headers.get("Retry-After")
+                    if retry_after:
+                        try:
+                            wait_time = int(retry_after)
+                        except ValueError:
+                            wait_time = 5
+                    else:
+                        wait_time = (backoff_factor ** attempt) + random.uniform(1, 5)
+                    logger.warning(f"Rate limited (429) for {url}. Waiting {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    continue
+
+                # Handle 5xx errors (Temporary Server Issues)
+                if response.status_code >= 500 and attempt < retries - 1:
+                    wait_time = (backoff_factor ** attempt) + random.uniform(1, 3)
+                    logger.warning(f"Server error ({response.status_code}) for {url}. Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    continue
+
+                headers_dict = dict(response.headers)
+                content_type = headers_dict.get("content-type", "").lower()
+                is_text = any(t in content_type for t in ["text", "xml", "json", "javascript"])
+
+                if is_text:
+                    # Read full body only for text/HTML content
+                    raw = await response.aread()
+                    html_content = raw.decode(response.encoding or "utf-8", errors="replace")
                 else:
-                    wait_time = (backoff_factor ** attempt) + random.uniform(1, 5)
-                
-                logger.warning(f"Rate limited (429) for {url}. Waiting {wait_time}s...")
-                await asyncio.sleep(wait_time)
-                continue
+                    # Binary (images, PDFs, etc.) — bail immediately, no body download
+                    html_content = ""
 
-            # Handle 5xx errors (Temporary Server Issues)
-            if response.status_code >= 500 and attempt < retries - 1:
-                wait_time = (backoff_factor ** attempt) + random.uniform(1, 3)
-                logger.warning(f"Server error ({response.status_code}) for {url}. Retrying in {wait_time}s...")
-                await asyncio.sleep(wait_time)
-                continue
-            
-            headers_dict = dict(response.headers)
-            content_type = headers_dict.get("content-type", "").lower()
-            
-            is_text = any(t in content_type for t in ["text", "xml", "json", "javascript"])
-            html_content = response.text if is_text else ""
-            
-            content_length = headers_dict.get("content-length")
-            if not content_length:
-                content_length = str(len(response.content))
-            
-            return {
-                "url": url,
-                "final_url": str(response.url),
-                "status": response.status_code,
-                "html": html_content,
-                "headers": headers_dict,
-                "content_type": content_type.split(";")[0],
-                "content_length": int(content_length) if str(content_length).isdigit() else 0,
-                "response_time_ms": int((t1 - t0) * 1000),
-                "redirect_history": [
-                    {"status": r.status_code, "url": str(r.url)}
-                    for r in response.history
-                ],
-                "encoding": response.encoding
-            }
+                content_length = headers_dict.get("content-length", "0")
+
+                return {
+                    "url": url,
+                    "final_url": str(response.url),
+                    "status": response.status_code,
+                    "html": html_content,
+                    "headers": headers_dict,
+                    "content_type": content_type.split(";")[0],
+                    "content_length": int(content_length) if str(content_length).isdigit() else 0,
+                    "response_time_ms": int((t1 - t0) * 1000),
+                    "redirect_history": [
+                        {"status": r.status_code, "url": str(r.url)}
+                        for r in response.history
+                    ],
+                    "encoding": response.encoding
+                }
             
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError, httpx.ReadTimeout) as e:
             last_error = str(type(e).__name__)
