@@ -27,7 +27,10 @@ class PluginRunRequest(BaseCrawlRequest):
     target_keyword: Optional[str] = None
     openai_key: Optional[SecretStr] = None
     gemini_key: Optional[SecretStr] = None
+    openrouter_key: Optional[SecretStr] = None
     ollama_host: Optional[str] = "http://localhost:11434"
+    ollama_model: Optional[str] = "llama3"
+    primary_provider: Optional[str] = "gemini" # Default
     site_token: Optional[SecretStr] = None
 
 class DeployConfig(BaseModel):

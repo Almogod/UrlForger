@@ -13,8 +13,9 @@ class JSCrawler:
     Used when normal HTTP crawler cannot discover links.
     """
 
-    def __init__(self, start_url, limit=50, concurrency=3, delay=2.0, check_robots=True, headers=None, crawl_assets=False, broken_links_only=False, user_agent="chrome"):
-        self.start_url = start_url
+    def __init__(self, start_url, limit=50, progress_callback=None, concurrency=3, delay=2.0, check_robots=True, headers=None, crawl_assets=False, broken_links_only=False, user_agent="chrome"):
+        from .frontier import ensure_scheme
+        self.start_url = ensure_scheme(start_url)
         self.limit = limit
         self.concurrency = concurrency
         self.delay = delay
@@ -23,23 +24,24 @@ class JSCrawler:
         self.crawl_assets = crawl_assets
         self.broken_links_only = broken_links_only
         self.user_agent = user_agent
+        self.progress_callback = progress_callback
 
         self.visited = set()
-        self.to_visit = {start_url}
+        self.to_visit = {self.start_url}
         self.results = []
         self.checked_pages = 0
         self.graph = CrawlGraph()
 
-        self.domain = urlparse(start_url).netloc
+        parsed_start = urlparse(self.start_url)
+        self.domain = parsed_start.netloc
         self.base_path = ""
-        path = urlparse(start_url).path
-        if path and path != "/":
-            self.base_path = path
+        if parsed_start.path and parsed_start.path != "/":
+            self.base_path = parsed_start.path
 
         self.rp = None
         if self.check_robots:
             try:
-                robots_url = f"{urlparse(start_url).scheme}://{self.domain}/robots.txt"
+                robots_url = f"{parsed_start.scheme}://{self.domain}/robots.txt"
                 self.rp = RobotFileParser()
                 self.rp.set_url(robots_url)
                 self.rp.read()
@@ -95,6 +97,8 @@ class JSCrawler:
                         continue
                     
                     self.checked_pages += 1
+                    if self.progress_callback:
+                        self.progress_callback(f"Crawling (JS): {self.checked_pages}/{self.limit} pages")
 
                     async with semaphore:
                         if self.delay > 0:
@@ -245,13 +249,14 @@ class JSCrawler:
         }
 
 
-def crawl_js_sync(start_url, limit=50, delay=2.0, check_robots=True, headers=None, crawl_assets=False, broken_links_only=False, user_agent="chrome"):
+def crawl_js_sync(start_url, limit=50, progress_callback=None, delay=2.0, check_robots=True, headers=None, crawl_assets=False, broken_links_only=False, user_agent="chrome"):
     """
     Synchronous wrapper for FastAPI usage. Safe for Windows threads.
     """
     crawler = JSCrawler(
         start_url, 
         limit, 
+        progress_callback=progress_callback,
         delay=delay, 
         check_robots=check_robots, 
         headers=headers, 

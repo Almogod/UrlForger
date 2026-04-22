@@ -68,7 +68,13 @@ def run_engine(pages, clean_urls, domain, graph, competitors=None, progress_call
             progress_callback(f"Running module: {module_name}...")
 
         try:
-            module_result = module.run(context)
+            # Check if module accepts progress_callback
+            import inspect
+            sig = inspect.signature(module.run)
+            if "progress_callback" in sig.parameters:
+                module_result = module.run(context, progress_callback=progress_callback)
+            else:
+                module_result = module.run(context)
 
             results["modules"][module_name] = module_result
 

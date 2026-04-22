@@ -26,6 +26,16 @@ async def run_workers(
 ):
     from .frontier import ensure_scheme, is_internal_domain
 
+    # --- GitHub Surgical Filtering ---
+    is_github = "github.com" in (start_url or "").lower()
+    
+    # Ensure we use a scheme-aware URL for ID extraction
+    start_url_norm = ensure_scheme(start_url) if start_url else ""
+    github_repo_path = urlparse(start_url_norm).path.strip("/") if is_github else ""
+    
+    # Only keep the first 2 parts of the path for repo identification (user/repo), lowercased
+    github_repo_id = "/".join(github_repo_path.split("/")[:2]).lower() if is_github else ""
+
     results = []
     comp_url = ensure_scheme(start_url) if start_url else None
 
@@ -69,9 +79,45 @@ async def run_workers(
     def enqueue(url, depth, priority):
         """Enqueue only if unseen and within limit. Safe - no await between check and add."""
         nonlocal dispatched
-        if url in seen_urls or dispatched >= limit:
+        
+        # URL normalization for 'seen' check (GitHub is mostly case-insensitive for paths)
+        url_check = url.lower() if is_github else url
+        
+        if url_check in seen_urls or dispatched >= limit:
             return
-        seen_urls.add(url)
+
+        # --- GitHub Surgical Filtering ---
+        if is_github:
+            parsed = urlparse(url)
+            path = parsed.path.lower()
+            
+            # Ensure we stay within the same repo (surgical match)
+            if github_repo_id not in path:
+                logger.debug(f"[CRAWL_FILTER] Skipping {url} - out of repo scope ({github_repo_id})")
+                return
+                
+            # Block noisy GitHub paths
+            noise_patterns = [
+                '/pulls', '/issues', '/commits', '/search', '/stargazers', 
+                '/network', '/watchers', '/releases', '/actions', '/projects',
+                '/wiki', '/security', '/pulse', '/graphs', '/settings', '/branches', '/tags'
+            ]
+            if any(p in path for p in noise_patterns):
+                logger.debug(f"[CRAWL_FILTER] Skipping {url} - noisy GitHub path")
+                return
+            
+            # If it's a file view (blob), allow common code and config extensions
+            if '/blob/' in path:
+                valid_exts = [
+                    '.html', '.css', '.js', '.jsx', '.tsx', '.md', '.json', '.htm',
+                    '.py', '.go', '.sh', '.yml', '.yaml', '.txt', '.c', '.cpp', '.h', '.rs',
+                    '.xml', '.php', '.java', '.rb', '.ts', '.sql'
+                ]
+                if not any(path.endswith(ext) for ext in valid_exts):
+                    logger.debug(f"[CRAWL_FILTER] Skipping {url} - non-relevant file extension")
+                    return
+
+        seen_urls.add(url_check)
         dispatched += 1
         queue.put_nowait({"url": url, "depth": depth, "priority": priority})
 
@@ -150,8 +196,22 @@ async def run_workers(
                             results.append(page)
                             count = len(results)
                             logger.info(f"Fetched {url} ({status}). Total: {count}/{limit}")
-                            if progress_callback and count % 10 == 0:
-                                progress_callback(f"Crawling: {count}/{limit} pages")
+                            if progress_callback and count % 2 == 0:
+                                display_url = url.replace("https://", "").replace("http://", "")[:35] + "..." if len(url) > 35 else url
+                                progress_callback(f"Crawling: {count}/{limit} pages ({display_url})")
+
+                        # Special Handling: GitHub UI Noise reduction
+                        if "github.com" in parsed_final.netloc:
+                            # Skip common UI paths that don't contain source code or relevant SEO content
+                            ui_noise = ["/issues", "/pulls", "/actions", "/projects", "/wiki", "/security", "/pulse", "/network", "/settings", "/commits", "/branches", "/tags", "/stargazers", "/watchers", "/find/", "/search"]
+                            if any(noise in final_url for noise in ui_noise):
+                                logger.info(f"Skipping GitHub UI noise: {final_url}")
+                                continue
+                            
+                            # Only crawl blobs (files) or trees (directories)
+                            if "/blob/" not in final_url and "/tree/" not in final_url and final_url.count('/') > 4:
+                                # This is a sub-page that isn't a file or folder (like a specific commit view)
+                                continue
 
                         # Extract & enqueue links from successful HTML pages
                         if status == 200 and page.get("html") and not is_external and depth < max_depth:

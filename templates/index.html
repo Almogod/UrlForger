@@ -13,7 +13,7 @@
     <div id="loading-overlay" class="hidden">
         <div class="status-container">
             <div class="status-pulse"></div>
-            <div id="status-display">Initializing UrlForge Engine...</div>
+            <div id="status-display" class="status-text">Initializing UrlForge Engine...</div>
         </div>
     </div>
 
@@ -199,6 +199,16 @@
 
                     <!-- AI FORMS VIEW (HIDDEN) -->
                     <div id="ai-config-forms" class="ai-config-forms hidden">
+                        <div class="form-group" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--primary-color);">
+                            <label style="color: var(--primary-color); font-weight: 700;">Primary AI Engine (User Choice)</label>
+                            <select name="primary_provider" style="width:100%; padding:12px; border-radius:8px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); color: #fff; font-weight: 600;">
+                                <option value="gemini">Google Gemini (Deep Reasoning)</option>
+                                <option value="ollama">Ollama (Local / Private)</option>
+                                <option value="openai">OpenAI (Creative Content)</option>
+                                <option value="openrouter">OpenRouter (Universal Choice)</option>
+                            </select>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">UrlForge will use this engine as the lead brain for your analysis.</p>
+                        </div>
                         <div class="form-group">
                             <label>OpenAI API Key (Optional)</label>
                             <input type="password" name="openai_key" placeholder="sk-...">
@@ -208,8 +218,18 @@
                             <input type="password" name="gemini_key" placeholder="AIza...">
                         </div>
                         <div class="form-group">
-                            <label>Ollama Host (Optional)</label>
-                            <input type="text" name="ollama_host" placeholder="http://localhost:11434">
+                            <label>OpenRouter API Key (Optional)</label>
+                            <input type="password" name="openrouter_key" placeholder="sk-or-...">
+                        </div>
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 2;">
+                                <label>Ollama Host (Optional)</label>
+                                <input type="text" name="ollama_host" placeholder="http://localhost:11434">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Local Model</label>
+                                <input type="text" name="ollama_model" placeholder="llama3" value="llama3">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Site Access Token (Optional)</label>
@@ -1216,9 +1236,14 @@
                     if (statusRes.ok) {
                         const statusData = await statusRes.json();
                         const currentStatus = statusData.status;
+                        
+                        // Jolt the brain on every poll to show 'Activity' even if status text is same
+                        if (window.brain) window.brain.jolt();
+
                         if (currentStatus && currentStatus !== lastStatus) {
                             lastStatus = currentStatus;
                             if (window.brain) window.brain.showCategory(currentStatus);
+                            
                             statusDisplay.style.opacity = '0';
                             setTimeout(() => {
                                 statusDisplay.innerText = currentStatus;
@@ -1654,11 +1679,7 @@
 </div>
     </div><!-- End content-area -->
 
-    <div id="loading-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; pointer-events: none;">
-        <div id="status-display" style="color: #fff; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; text-align: center; text-transform: uppercase; text-shadow: 0 0 20px rgba(255,255,255,0.5); opacity: 0; transition: opacity 0.3s ease; margin-top: 200px;">
-            Connecting to UrlForge...
-        </div>
-    </div>
+    <!-- Duplicate overlay removed -->
     
     <script src="/static/brain_engine.js?v={{ timestamp | default('4') }}"></script>
     <script>

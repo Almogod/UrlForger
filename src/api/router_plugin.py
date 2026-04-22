@@ -18,46 +18,92 @@ async def run_plugin_task(
     background_tasks: BackgroundTasks
 ):
     task_id = data.task_id or str(uuid.uuid4())[:10]
-    task_store.set_status(task_id, "In Progress", domain=data.site_url)
     
-    # ── API Key Merging Logic ────────────────────────────────────────
-    # ... (skipping some lines for brevity in instruction, will replace whole block)
+    # Pre-validation: Catch accidental key-in-url-field swaps
+    if data.site_url.startswith("AIza") or data.site_url.startswith("sk-"):
+        raise HTTPException(status_code=400, detail=f"Invalid Site URL: It looks like you entered an API key ('{data.site_url[:8]}...') in the URL field.")
+        
+    # ── API Key Merging & Provider Selection ──────────────────────────
     frontend_openai = data.openai_key.get_secret_value() if data.openai_key else None
     frontend_gemini = data.gemini_key.get_secret_value() if data.gemini_key else None
+    frontend_openrouter = data.openrouter_key.get_secret_value() if data.openrouter_key else None
     
     final_openai = frontend_openai or (config.OPENAI_API_KEY.get_secret_value() if config.OPENAI_API_KEY else None)
     final_gemini = frontend_gemini or (config.GEMINI_API_KEY.get_secret_value() if config.GEMINI_API_KEY else None)
+    final_openrouter = frontend_openrouter or os.getenv("OPENROUTER_API_KEY")
     final_ollama = data.ollama_host or config.OLLAMA_HOST
-    
-    # Determine primary provider based on explicit user choice and availability
-    if frontend_gemini:
-        provider = "gemini"
-        api_key = frontend_gemini
-    elif frontend_openai:
-        provider = "openai"
-        api_key = frontend_openai
-    elif final_gemini and ("your_sk" not in final_gemini):
-        provider = "gemini"
-        api_key = final_gemini
-    elif final_openai and ("your_sk" not in final_openai):
-        provider = "openai"
-        api_key = final_openai
-    elif final_ollama and "localhost" not in final_ollama:
-        provider = "ollama"
-        api_key = "ollama"
-    else:
-        # Fallback to whatever is available, preferring Gemini if OpenAI looks like a placeholder
-        if final_gemini:
-            provider = "gemini"
-            api_key = final_gemini
+
+    # ── Selection & Fallback Logic ────────────────────────────────────
+    # User's Explicit Choice is the Starting Point
+    provider = data.primary_provider or "gemini"
+    api_key = None
+
+    # Helper to check if a key is "real" (not a placeholder)
+    def is_valid(k): return k and "your_" not in k and len(k) > 10
+
+    # 1. Attempt the User's Choice
+    if provider == "openai" and is_valid(final_openai): api_key = final_openai
+    elif provider == "gemini" and is_valid(final_gemini): api_key = final_gemini
+    elif provider == "openrouter" and is_valid(final_openrouter): api_key = final_openrouter
+    elif provider == "ollama": api_key = "ollama"
+
+    # 2. Automated Fallback Chain (if choice is unavailable)
+    if not api_key:
+        if is_valid(final_openai): 
+            provider, api_key = "openai", final_openai
+        elif is_valid(final_gemini): 
+            provider, api_key = "gemini", final_gemini
+        elif is_valid(final_openrouter): 
+            provider, api_key = "openrouter", final_openrouter
         else:
-            provider = "openai"
-            api_key = final_openai
+            provider, api_key = "ollama", "ollama"
+            
+    logger.info(f"Engine selected provider: {provider} (Lead: {data.primary_provider})")
+
+    # ── API Key Pre-Validation ──────────────────────────────────────
+    if provider == "gemini" and api_key and api_key.startswith("AIza"):
+        import google.generativeai as genai
+        try:
+            genai.configure(api_key=api_key)
+            # Just test the connection
+            list(genai.list_models())
+        except Exception as e:
+            err_msg = f"Gemini API Key Validation Failed: {str(e)}. Please check your key at aistudio.google.com."
+            if "404" in str(e) or "403" in str(e):
+                 err_msg = f"Gemini API Error: Your key is either invalid or the 'Generative Language API' is not enabled. (Details: {str(e)})"
+            raise HTTPException(status_code=400, detail=err_msg)
+    elif provider == "gemini" and api_key and "your_aiza" in api_key:
+        # User left placeholder, but chose Gemini. We'll let it fail later or use fallback
+        pass
+    elif provider == "ollama":
+        import httpx
+        try:
+            host = final_ollama.rstrip('/')
+            models_res = httpx.get(f"{host}/api/tags", timeout=5.0)
+            if models_res.status_code == 200:
+                available = [m['name'] for m in models_res.json().get('models', [])]
+                if not available:
+                    raise HTTPException(status_code=400, detail="No Ollama models found. Please run 'ollama pull llama3' in your terminal.")
+                
+                target_model = data.ollama_model or "llama3"
+                # Check for exact or base match
+                if not any(target_model in m for m in available):
+                     raise HTTPException(status_code=400, detail=f"Ollama model '{target_model}' not found. Available: {', '.join(available)}. Please pull the correct model.")
+            else:
+                 raise HTTPException(status_code=400, detail=f"Ollama returned error {models_res.status_code} when checking models.")
+        except httpx.ConnectError:
+             raise HTTPException(status_code=400, detail=f"Could not connect to Ollama at {final_ollama}. Is it running?")
+        except Exception as e:
+            if isinstance(e, HTTPException): raise e
+            logger.warning(f"Ollama model check failed: {e}")
+
+    task_store.set_status(task_id, "In Progress", domain=data.site_url)
 
     llm_config = {
         "provider": provider,
         "api_key": api_key,
         "ollama_host": final_ollama,
+        "ollama_model": data.ollama_model or "llama3",
         "openai_key": final_openai,
         "gemini_key": final_gemini
     }
@@ -191,8 +237,16 @@ async def update_content(
         task_store.save_results(data.task_id, report)
         return JSONResponse(content={"status": "success", "message": f"Updated content for {data.keyword}"})
     except Exception as e:
-        logger.error(f"Failed to update content: {e}")
+        logger.error(f"Error in analysis task: {str(e)}")
+        # Check if the domain looks like an API key (common user mistake)
+        domain = report.get("domain", "") if report else ""
+        if domain.startswith("AIza") or domain.startswith("sk-"):
+             err_msg = f"Invalid Target Domain: It looks like you entered an API key ('{domain[:8]}...') instead of a website URL."
+             task_store.set_status(data.task_id, err_msg, error=err_msg)
+        else:
+             task_store.set_status(data.task_id, f"Error: {str(e)}", error=str(e))
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 @router.post("/update_faq")
 async def update_plugin_faq(data: FAQUpdateRequest):
     """Update a specific FAQ in the task result report."""

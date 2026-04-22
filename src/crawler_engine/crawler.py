@@ -6,7 +6,7 @@ from .scheduler import run_workers
 from .graph import CrawlGraph
 from src.utils.logger import logger
 
-def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=False, backend="memory", concurrency=10, custom_selectors=None, broken_links_only=False, user_agent="chrome"):
+def crawl(start_url, limit=200, progress_callback=None, extra_headers=None, max_depth=10, crawl_assets=False, backend="memory", concurrency=10, custom_selectors=None, broken_links_only=False, user_agent="chrome"):
     # Scaling logic: Auto-switch to SQLite for large crawls to prevent memory pressure
     if limit > 500 and backend == "memory":
         logger.info(f"Scaling detected (Limit: {limit}). Auto-switching to SQLite Enterprise Frontier...")
@@ -28,11 +28,11 @@ def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=F
     try:
         pages = asyncio.run(
             run_workers(
-                # ... args ...
                 frontier, 
                 extract_links, 
                 graph, 
                 start_url=start_url,
+                progress_callback=progress_callback,
                 limit=limit, 
                 concurrency=concurrency,
                 extra_headers=extra_headers,
@@ -48,11 +48,11 @@ def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=F
         loop = asyncio.new_event_loop()
         pages = loop.run_until_complete(
             run_workers(
-                # ... args ...
                 frontier, 
                 extract_links, 
                 graph, 
                 start_url=start_url,
+                progress_callback=progress_callback,
                 limit=limit, 
                 concurrency=concurrency,
                 extra_headers=extra_headers,
@@ -66,7 +66,7 @@ def crawl(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=F
 
     return pages, graph
 
-async def crawl_async(start_url, limit=200, extra_headers=None, max_depth=10, crawl_assets=False, backend="memory", concurrency=10, custom_selectors=None, broken_links_only=False, user_agent="chrome"):
+async def crawl_async(start_url, limit=200, progress_callback=None, extra_headers=None, max_depth=10, crawl_assets=False, backend="memory", concurrency=10, custom_selectors=None, broken_links_only=False, user_agent="chrome"):
     if limit > 500 and backend == "memory":
         backend = "sqlite"
 
@@ -83,6 +83,7 @@ async def crawl_async(start_url, limit=200, extra_headers=None, max_depth=10, cr
         extract_links, 
         graph, 
         start_url=start_url,
+        progress_callback=progress_callback,
         limit=limit, 
         concurrency=concurrency,
         extra_headers=extra_headers,

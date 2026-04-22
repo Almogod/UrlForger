@@ -39,7 +39,7 @@ def generate_site_faqs(site_keywords, domain, llm_config, site_context=None):
 
 def _generate_faqs_with_llm(keywords, domain, llm_config, site_context):
     """High-Fidelity Expert LLM FAQ Generation."""
-    from src.content.page_generator import _call_openai, _call_gemini, _call_ollama, _extract_json_from_llm
+    from src.content.page_generator import _call_openai, _call_gemini, _call_ollama, _call_openrouter, _extract_json_from_llm
     
     niche = site_context.get("niche", "Professional Services")
     mission = site_context.get("mission", "")
@@ -60,11 +60,12 @@ OUTPUT: Strict JSON Array of {{"question": "", "answer": ""}}
 每一条 answer 必须在 60-100 字之间。
 """
     try:
-        provider = llm_config.get("provider", "openai").lower()
+        provider = llm_config.get("provider", "gemini").lower()
         res = None
         if provider == "openai": res = _call_openai(prompt, llm_config)
         elif provider == "gemini": res = _call_gemini(prompt, llm_config)
         elif provider == "ollama": res = _call_ollama(prompt, llm_config)
+        elif provider == "openrouter": res = _call_openrouter(prompt, llm_config)
         
         data = _extract_json_from_llm(res)
         return data if isinstance(data, list) else []

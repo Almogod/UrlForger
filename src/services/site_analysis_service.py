@@ -1,4 +1,4 @@
-from src.content.page_generator import _call_openai, _call_gemini, _call_ollama
+from src.content.page_generator import _call_openai, _call_gemini, _call_ollama, _call_openrouter
 from src.config import config
 from src.utils.logger import logger
 import json
@@ -61,6 +61,8 @@ Use professional, authoritative markdown.
             report = _call_gemini(prompt, call_config)
         elif provider == "ollama":
             report = _call_ollama(prompt, call_config)
+        elif provider == "openrouter":
+            report = _call_openrouter(prompt, call_config)
             
         return report
     except Exception as e:

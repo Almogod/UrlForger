@@ -19,15 +19,19 @@ KEYWORD_STUFFING_THRESHOLD = 0.04   # > 4% = stuffed
 LOW_KEYWORD_DENSITY_THRESHOLD = 0.005  # < 0.5% = under-optimized
 
 
-def run(context):
+def run(context, progress_callback=None):
     pages = context["pages"]
+    total = len(pages)
 
     issues = []
     suggestions = {}
     content_hashes = {}
 
-    for page in pages:
+    for i, page in enumerate(pages):
         url = page.get("url")
+        if progress_callback and i % 10 == 0:
+            progress_callback(f"Content Analysis: {i}/{total} pages")
+            
         html = page.get("html")
 
         if not html:

@@ -109,7 +109,8 @@ async def run_plugin(
             progress(f"Starting phase: {phase}...")
             
             if phase == "crawl":
-                pages, clean_urls, domain, graph = await _crawl(site_url, crawl_options, site_token)
+                progress("Initializing Enterprise Crawler...")
+                pages, clean_urls, domain, graph = await _crawl(site_url, crawl_options, progress, site_token)
                 context_data.update({
                     "pages": pages,
                     "clean_urls": clean_urls,
@@ -126,6 +127,7 @@ async def run_plugin(
                 # ═══════════════════════════════════════════════════
                 # STEP 0: GSC Analysis (Optional)
                 # ═══════════════════════════════════════════════════
+                progress("Authenticating with Google Search Console...")
                 gsc_res = {"available": False, "indexed": [], "unindexed": [], "gaps": {}}
                 gsc_service = GSCService()
                 if gsc_service.is_available():
@@ -175,6 +177,7 @@ async def run_plugin(
                     competitors=competitors,
                     progress_callback=progress
                 )
+                progress("Compiling audit report and fix strategy...")
                 context_data["results"] = results
                 report["seo_score_before"] = results.get("seo_score", 0)
                 report["engine_result"] = results
@@ -218,12 +221,14 @@ async def run_plugin(
                 # STEP 3: Extract & Rank Keywords
                 # ═══════════════════════════════════════════════════
                 from src.content.engine import run_content_engine
+                progress("Running Keyword Strategy Engine...")
                 content_res = run_content_engine(
                     context_data["pages"], 
                     competitors, 
                     llm_config, 
                     domain=context_data["domain"]
                 )
+                progress("Ranking discovered keywords and identifying gaps...")
                 
                 keyword_gaps = content_res.get("recommendations", [])
                 site_keywords = content_res.get("site_keywords", [])
@@ -503,7 +508,7 @@ def apply_approved_plugin_fixes(task_id, approved_action_ids, approved_page_keyw
 
 
 
-async def _crawl(site_url, crawl_options, site_token=None):
+async def _crawl(site_url, crawl_options, progress_callback=None, site_token=None):
     from urllib.parse import urlparse
     from src.utils.url_utils import build_clean_urls
 
@@ -529,6 +534,7 @@ async def _crawl(site_url, crawl_options, site_token=None):
         pages, graph = crawl_js_sync(
             site_url, 
             limit=limit, 
+            progress_callback=progress_callback,
             delay=delay,
             headers=headers, 
             crawl_assets=crawl_assets, 
@@ -540,6 +546,7 @@ async def _crawl(site_url, crawl_options, site_token=None):
         pages, graph = await crawl_async(
             site_url, 
             limit=limit, 
+            progress_callback=progress_callback,
             extra_headers=headers,
             max_depth=max_depth,
             crawl_assets=crawl_assets,

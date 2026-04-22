@@ -172,7 +172,7 @@ def analyze_site_content(pages, domain, llm_config=None):
     Strategic Site Analysis (Deep DNA).
     No API? Refuses to guess 'General' if keyword signals are strong.
     """
-    from src.content.page_generator import _call_openai, _call_gemini, _call_ollama, _extract_json_from_llm
+    from src.content.page_generator import _call_openai, _call_gemini, _call_ollama, _call_openrouter, _extract_json_from_llm
     
     if not pages:
         return {"domain": domain, "niche": "None", "error": "No pages detected"}
@@ -212,19 +212,18 @@ STRICT JSON OUTPUT:
 }}
 """
         try:
-            provider = llm_config.get("provider", "openai").lower()
-            
-            # Smart dispatch: skip provider if its key is known to be a placeholder
+            provider = llm_config.get("provider", "gemini").lower()
             api_key = llm_config.get("api_key", "")
-            if "your_sk" in api_key and provider == "openai" and llm_config.get("gemini_key"):
-                logger.info("Switching to Gemini as OpenAI key is a placeholder.")
-                provider = "gemini"
-                api_key = llm_config.get("gemini_key")
 
             res = None
-            if provider == "openai": res = _call_openai(prompt, llm_config)
-            elif provider == "gemini": res = _call_gemini(prompt, {**llm_config, "api_key": api_key})
-            elif provider == "ollama": res = _call_ollama(prompt, llm_config)
+            if provider == "openai": 
+                res = _call_openai(prompt, llm_config)
+            elif provider == "gemini": 
+                res = _call_gemini(prompt, llm_config)
+            elif provider == "ollama": 
+                res = _call_ollama(prompt, llm_config)
+            elif provider == "openrouter":
+                res = _call_openrouter(prompt, llm_config)
             
             data = _extract_json_from_llm(res)
             if data and "niche" in data:

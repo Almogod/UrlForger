@@ -175,19 +175,26 @@ class BrainAnimation {
 
     showCategory(text) {
         const isBad = text.toLowerCase().includes('error') || text.toLowerCase().includes('fail') || text.toLowerCase().includes('issue');
-        this.glow(!isBad);
+        if (isBad) this.glow(false);
+        else this.jolt();
         
         this.labels.push({
             text: text.toUpperCase(),
-            x: 0,
-            y: 0,
+            x: (Math.random() - 0.5) * 60, // Start spread out to avoid center text
+            y: (Math.random() - 0.5) * 30,
             z: 0,
-            vx: (Math.random() - 0.5) * 2, // Slower lateral drift
-            vy: (Math.random() - 0.5) * 0.5,
-            vz: 0.8, // Slow-motion fly for readability
+            vx: (Math.random() - 0.5) * 8, // More energetic spread
+            vy: (Math.random() - 0.5) * 4,
+            vz: 1.2, // Faster fly-out for "explosion" feel
             opacity: 0,
-            life: 4.0 // Longer life for readability
+            life: 4.0 // High readability
         });
+    }
+    
+    jolt() {
+        this.glowIntensity = Math.max(this.glowIntensity, 0.4);
+        this.rotation.x += (Math.random() - 0.5) * 0.1;
+        this.rotation.y += (Math.random() - 0.5) * 0.1;
     }
 
     animate() {
@@ -201,7 +208,10 @@ class BrainAnimation {
         
         this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.05;
         this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.05;
-        this.scale += (this.targetScale - this.scale) * 0.05;
+        
+        // Dynamic thinking pulse
+        const pulse = this.isEnlarged ? Math.sin(time * 3) * (this.scale * 0.03) : 0;
+        this.scale += (this.targetScale + pulse - this.scale) * 0.05;
 
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;

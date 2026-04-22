@@ -8,6 +8,7 @@ Uses Brand DNA Synthesis for fallback and Chain-of-Thought for LLM generation.
 import json
 import re
 import random
+import time
 import hashlib
 from datetime import datetime
 from src.utils.logger import logger
@@ -22,7 +23,7 @@ def generate_page(brief, llm_config, existing_pages=None, site_wide_faqs=None) -
     
     # 1. API Selection
     has_api = bool(llm_config.get("api_key")) or llm_config.get("provider") == "ollama"
-    provider = llm_config.get("provider", "openai").lower()
+    provider = llm_config.get("provider", "gemini").lower()
 
     if has_api:
         try:
@@ -36,6 +37,8 @@ def generate_page(brief, llm_config, existing_pages=None, site_wide_faqs=None) -
                 raw = _call_gemini(prompt, llm_config)
             elif provider == "ollama": 
                 raw = _call_ollama(prompt, llm_config)
+            elif provider == "openrouter":
+                raw = _call_openrouter(prompt, llm_config)
             
             if raw:
                 json_schema_dict = _extract_json_from_llm(raw)
@@ -208,12 +211,118 @@ def _call_openai(prompt, config):
 
 def _call_gemini(prompt, config):
     import google.generativeai as genai
-    genai.configure(api_key=config['api_key'])
-    model = genai.GenerativeModel(config.get("model", "gemini-1.5-flash"))
-    res = model.generate_content(prompt)
-    return res.text
+    import httpx
+    original_model = config.get("model", "gemini-1.5-flash")
+    model_candidates = [original_model, "gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash", "gemini-pro-latest", "gemini-pro"]
+    model_candidates = list(dict.fromkeys(model_candidates))
+    
+    key = config.get('api_key', '')
+    if not key:
+        raise RuntimeError("Gemini API Key is missing.")
+
+    max_retries = 3
+    base_delay = 5.0
+
+    for attempt in range(max_retries):
+        # SDK Try
+        try:
+            genai.configure(api_key=key)
+            for model_name in model_candidates:
+                target_model = model_name if model_name.startswith("models/") else f"models/{model_name}"
+                try:
+                    model = genai.GenerativeModel(target_model)
+                    res = model.generate_content(prompt)
+                    if res and res.text: return res.text
+                except Exception as e:
+                    if "404" in str(e): continue
+                    if "429" in str(e): raise e # Jump to retry loop
+                    raise e
+        except Exception as sdk_err:
+            if "429" not in str(sdk_err):
+                logger.warning(f"Gemini SDK failed: {sdk_err}. Trying Direct REST Handshake...")
+
+        # REST Try
+        for model_name in model_candidates:
+            clean_model = model_name.replace("models/", "")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={key}"
+            try:
+                payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.7}}
+                res = httpx.post(url, json=payload, timeout=60.0)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data['candidates'][0]['content']['parts'][0]['text']
+                elif res.status_code == 404:
+                    continue
+                elif res.status_code == 429:
+                    # Respect retryDelay if provided
+                    retry_info = res.json().get("error", {}).get("details", [{}])[0].get("retryDelay", "5s")
+                    wait_time = float(retry_info.replace("s", "")) if "s" in str(retry_info) else base_delay
+                    wait_time = min(wait_time, 30.0) # Cap at 30s
+                    logger.warning(f"Gemini Rate Limit (429). Retrying in {wait_time}s (Attempt {attempt+1}/{max_retries})...")
+                    time.sleep(wait_time + random.uniform(1, 3))
+                    break # Break model loop to retry with fresh attempt
+                elif res.status_code == 403:
+                    raise RuntimeError("Gemini API 403: Access Denied. Check 'Generative Language API' enablement.")
+                else:
+                    raise RuntimeError(f"Gemini REST Error {res.status_code}: {res.text}")
+            except Exception as rest_err:
+                if "429" in str(rest_err):
+                    time.sleep(base_delay * (attempt + 1))
+                    break
+                if "404" in str(rest_err): continue
+                raise rest_err
+    
+    raise RuntimeError(f"Gemini API 429: Quota exhausted after {max_retries} retries. Please check your billing/usage limits in Google AI Studio.")
 
 def _call_ollama(prompt, config):
     import httpx
-    res = httpx.post(f"{config.get('ollama_host', 'http://localhost:11434')}/api/generate", json={"model": config.get("model", "llama3"), "prompt": prompt, "stream": False}, timeout=180)
-    return res.json().get("response", "")
+    host = config.get('ollama_host', 'http://localhost:11434').rstrip('/')
+    model = config.get("ollama_model", "llama3")
+    
+    try:
+        res = httpx.post(
+            f"{host}/api/generate", 
+            json={"model": model, "prompt": prompt, "stream": False}, 
+            timeout=180.0
+        )
+        if res.status_code == 200:
+            return res.json().get("response", "")
+        elif res.status_code == 404:
+            # Model not found? Try to list models to help debug
+            logger.error(f"Ollama Error: Model '{model}' not found on {host}. Please run 'ollama pull {model}'")
+            return f"Error: Ollama model '{model}' not found. Please pull it locally."
+        else:
+            logger.error(f"Ollama Error {res.status_code}: {res.text}")
+            return f"Error: Ollama returned {res.status_code}"
+    except httpx.ConnectError:
+        logger.error(f"Ollama Error: Could not connect to {host}. Is Ollama running?")
+        return "Error: Could not connect to Ollama. Ensure it is running locally."
+    except Exception as e:
+        logger.error(f"Ollama Exception: {str(e)}")
+        return f"Error: {str(e)}"
+
+def _call_openrouter(prompt, config):
+    import httpx
+    api_key = config.get("api_key")
+    model = config.get("model", "google/gemini-2.0-flash-001")
+    
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://urlforge.ai",
+        "X-Title": "UrlForge",
+    }
+    
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a professional SEO consultant. Use clean markdown."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+    
+    res = httpx.post(url, headers=headers, json=payload, timeout=120)
+    if res.status_code == 200:
+        return res.json()['choices'][0]['message']['content']
+    else:
+        raise RuntimeError(f"OpenRouter Error {res.status_code}: {res.text}")

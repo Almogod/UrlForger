@@ -118,6 +118,11 @@ async def generate(
     background_tasks: BackgroundTasks
 ):
     task_id = data.task_id or str(uuid.uuid4())
+    
+    if data.domain.startswith("AIza") or data.domain.startswith("sk-"):
+        raise HTTPException(status_code=400, detail=f"Invalid Domain: It looks like you entered an API key ('{data.domain[:8]}...') in the Domain field.")
+
+    task_store.set_status(task_id, "In Progress", domain=data.domain)
     background_tasks.add_task(
         run_analysis_task, 
         task_id=task_id, 
