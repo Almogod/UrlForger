@@ -15,6 +15,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Create data directory for persistent storage
+RUN mkdir -p /data && chmod 777 /data
+
 # Install runtime dependencies for playwright
 RUN apt-get update && apt-get install -y \
     libnss3 \
@@ -46,4 +49,5 @@ RUN playwright install chromium --with-deps
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Use gunicorn with uvicorn workers for production
+CMD ["gunicorn", "app:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "--timeout", "120"]

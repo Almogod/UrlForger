@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: urlforge-engine
+    env: docker
+    plan: free # or starter/standard
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        value: sqlite:////data/database.db
+      - key: PORT
+        value: 8000
+    disk:
+      name: urlforge-data
+      mountPath: /data
+      sizeGB: 1
+    autoDeploy: true
+
+# Note: Ensure you add your API keys (OPENAI_API_KEY, GEMINI_API_KEY, etc.) 
+# manually in the Render Dashboard Environment Variables section.

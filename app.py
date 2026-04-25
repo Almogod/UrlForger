@@ -135,6 +135,10 @@ app.include_router(gsc_router, tags=["GSC"])
 
 # Auth layer removed by user request
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "uptime": time.time() - start_time, "timestamp": datetime.utcnow().isoformat()}
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "timestamp": int(time.time())})
