@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 .env
 .venv/
-audit.log
+*.log
+failed_task_debug.json
+task_dump.json
+sitemap_*.xml.gz
 sitemap.xml
 database.db

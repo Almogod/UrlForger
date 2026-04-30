@@ -218,8 +218,8 @@ Just paste a URL and hit **Crawl**. Results appear in real-time.
 
 ```bash
 # Clone the repository
-git clone https://github.com/Almogod/sitemap-fixer.git
-cd sitemap-fixer
+git clone https://github.com/Almogod/UrlForger.git
+cd UrlForger
 
 # Create a virtual environment
 python -m venv .venv

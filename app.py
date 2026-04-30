@@ -4,13 +4,13 @@ import sys
 import asyncio
 import time
 import uuid
-import concurrent.futures
-from typing import Optional, Union
+from typing import Dict, Any, List
 from urllib.parse import urlparse
-from datetime import datetime # Added for /health endpoint
+from datetime import datetime
 from contextlib import asynccontextmanager
+import secrets
 
-from fastapi import FastAPI, Form, BackgroundTasks, Request, HTTPException, Depends
+from fastapi import FastAPI, BackgroundTasks, Request, Depends
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -73,20 +73,34 @@ Instrumentator().instrument(app).expose(app)
 # Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # Generate a unique nonce for each request
+        nonce = secrets.token_urlsafe(16)
+        request.state.nonce = nonce
+        
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'"
+        
+        # CSP with Nonce for scripts
+        csp = (
+            f"default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; "
+            f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            f"font-src 'self' https://fonts.gstatic.com; "
+            f"img-src 'self' data: https:; "
+            f"connect-src 'self'"
+        )
+        response.headers["Content-Security-Policy"] = csp
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# No-Cache Middleware (Ensures 200 OK instead of 304 in Dev)
+# No-Cache Middleware (Only in Dev)
 class NoCacheMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith("/static") or config.APP_ENV != "production":
+        if config.APP_ENV != "production":
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
