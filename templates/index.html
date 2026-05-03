@@ -1835,64 +1835,69 @@
         if (!board) return;
 
         const lowerStatus = status.toLowerCase();
-        if (lowerStatus === 'thinking...' || lowerStatus === 'processing...') return;
+        // Don't create cards for generic 'thinking' or very short updates
+        if (lowerStatus === 'thinking...' || lowerStatus === 'processing...' || status.length < 4) return;
 
-        const moduleKeywords = ['vitals', 'sitemap', 'broken', 'meta', 'header', 'schema', 'content', 'keyword', 'competitor', 'image', 'speed', 'mobile', 'experience', 'fixing', 'deploying', 'audit'];
+        // Expanded list of keywords to catch almost every significant task
+        const moduleKeywords = [
+            'vitals', 'sitemap', 'broken', 'meta', 'header', 'schema', 'content', 
+            'keyword', 'competitor', 'image', 'speed', 'mobile', 'experience', 
+            'fixing', 'deploying', 'audit', 'robots', 'crawl', 'fetch', 'analysis', 
+            'generation', 'faq', 'business', 'synthesizing', 'strategy'
+        ];
         
-        if ((lowerStatus.includes('page ') || lowerStatus.includes('fetch')) && pipelineNodes.length > 0) {
-            const lastNode = pipelineNodes[pipelineNodes.length - 1];
-            const pill = lastNode.el.querySelector('.node-label-pill');
-            if (pill) pill.innerText = status;
-            return;
-        }
-
-        const currentType = moduleKeywords.find(k => lowerStatus.includes(k)) || 'process';
-        const isNewSignificantStage = pipelineNodes.length === 0 || 
-            (currentType !== 'process' && currentType !== pipelineNodes[pipelineNodes.length-1].type);
+        // Find if the status matches a known module type
+        const currentType = moduleKeywords.find(k => lowerStatus.includes(k)) || 'task';
+        
+        // A stage is new if it's the first one, OR if the type changed, OR if the status is unique enough
+        const lastNode = pipelineNodes.length > 0 ? pipelineNodes[pipelineNodes.length - 1] : null;
+        const isNewSignificantStage = !lastNode || 
+            (currentType !== 'task' && currentType !== lastNode.type) ||
+            (status.length > 20 && !lowerStatus.includes(lastNode.status.toLowerCase().substring(0, 15)));
 
         if (isNewSignificantStage) {
-             if (pipelineNodes.length > 0) {
-                 const lastNode = pipelineNodes[pipelineNodes.length - 1];
+             if (lastNode) {
                  lastNode.el.classList.remove('active');
                  lastNode.el.classList.add('completed');
                  if (lastNode.pipe) lastNode.pipe.classList.add('completed');
              }
 
              const index = pipelineNodes.length;
-             // Isometric Path Logic (Zig-Zag along the grid)
-             const step = 250;
+             // generous spacing to prevent overlap
+             const step = 350;
              let targetX, targetY;
              
              if (index === 0) {
-                 targetX = 1000;
-                 targetY = 1000;
+                 // Start slightly left of center to balance the first row
+                 targetX = 1700; 
+                 targetY = 1800;
              } else {
                  const prev = pipelineNodes[index - 1];
-                 // Alternating direction for zig-zag
-                 if (Math.floor(index / 3) % 2 === 0) {
-                     targetX = prev.x + step;
-                     targetY = prev.y;
-                 } else {
-                     targetX = prev.x;
-                     targetY = prev.y + step;
-                 }
+                 // 3-node rows for better centering
+                 const col = index % 3;
+                 const row = Math.floor(index / 3);
+                 
+                 targetX = 1700 + (col * step);
+                 targetY = 1800 + (row * step);
              }
              
              const nodeEl = document.createElement('div');
              nodeEl.className = 'pipeline-node active';
              
-             // Spawn at previous node position
-             const startPos = pipelineNodes.length > 0 ? pipelineNodes[pipelineNodes.length-1] : { x: 1000, y: 1000 };
-             nodeEl.style.left = `${startPos.x}px`;
-             nodeEl.style.top = `${startPos.y}px`;
+             // Spawn at previous node position or current target
+             const spawnX = lastNode ? lastNode.x : targetX;
+             const spawnY = lastNode ? lastNode.y : targetY;
+             nodeEl.style.left = `${spawnX}px`;
+             nodeEl.style.top = `${spawnY}px`;
              
              let icon = "⚙️";
-             let color = "#fff";
+             let color = "#f59e0b";
              if (lowerStatus.includes('crawl')) { icon = "🕸️"; color = "#3b82f6"; }
              else if (lowerStatus.includes('vitals')) { icon = "⚡"; color = "#f59e0b"; }
-             else if (lowerStatus.includes('analyz') || lowerStatus.includes('audit')) { icon = "📊"; color = "#a855f7"; }
+             else if (lowerStatus.includes('audit')) { icon = "📊"; color = "#a855f7"; }
              else if (lowerStatus.includes('fix')) { icon = "🔧"; color = "#10b981"; }
-             else if (lowerStatus.includes('deploy')) { icon = "🚀"; color = "#ef4444"; }
+             else if (lowerStatus.includes('gen')) { icon = "📝"; color = "#ec4899"; }
+             else if (lowerStatus.includes('faq')) { icon = "❓"; color = "#facc15"; }
              
              nodeEl.innerHTML = `
                 <div class="node-glow" style="--glow-color: ${color}"></div>
@@ -1904,23 +1909,23 @@
              
              board.appendChild(nodeEl);
              
+             // Visual connection logic
+             if (lastNode) {
+                 // Connect PREVIOUS node to THIS node
+                 // We add 70 to center the pipe on the 140px node
+                 const pipe = drawPipelinePipe(lastNode.x + 70, lastNode.y + 70, targetX + 70, targetY + 70, board);
+                 lastNode.pipe = pipe;
+             }
+
              setTimeout(() => {
                  nodeEl.style.left = `${targetX}px`;
                  nodeEl.style.top = `${targetY}px`;
-                 
-                 setTimeout(() => {
-                     if (pipelineNodes.length > 1) {
-                         const prev = pipelineNodes[pipelineNodes.length - 1];
-                         const pipe = drawPipelinePipe(prev.x + 60, prev.y + 60, targetX + 60, targetY + 60, board);
-                         prev.pipe = pipe;
-                     }
-                     adjustPipelineScaling();
-                 }, 400);
+                 adjustPipelineScaling();
              }, 50);
 
              pipelineNodes.push({ type: currentType, status, el: nodeEl, x: targetX, y: targetY });
-        } else if (pipelineNodes.length > 0) {
-             const lastNode = pipelineNodes[pipelineNodes.length - 1];
+        } else if (lastNode) {
+             // Update text of current node if it's just a minor update
              const pill = lastNode.el.querySelector('.node-label-pill');
              if (pill) pill.innerText = status;
         }
@@ -1934,24 +1939,26 @@
         let minX = 10000, maxX = -10000, minY = 10000, maxY = -10000;
         pipelineNodes.forEach(n => {
             minX = Math.min(minX, n.x);
-            maxX = Math.max(maxX, n.x + 120);
+            maxX = Math.max(maxX, n.x + 140);
             minY = Math.min(minY, n.y);
-            maxY = Math.max(maxY, n.y + 120); 
+            maxY = Math.max(maxY, n.y + 260); 
         });
 
         const width = maxX - minX;
         const height = maxY - minY;
         
-        const vw = viewport.clientWidth * 0.7;
-        const vh = viewport.clientHeight * 0.7;
+        const vw = viewport.clientWidth * 0.8;
+        const vh = viewport.clientHeight * 0.8;
         
-        const scale = Math.min(1.0, vw / Math.max(800, width), vh / Math.max(600, height));
+        const scale = Math.min(1.2, vw / Math.max(600, width), vh / Math.max(400, height));
         
         const centerX = minX + width / 2;
         const centerY = minY + height / 2;
         
-        // Isometric transform: rotateX(60deg) rotateZ(45deg)
-        board.style.transform = `scale(${scale}) translate(${-centerX + 1000}px, ${-centerY + 1000}px) rotateX(60deg) rotateZ(45deg)`;
+        // Ensure the board is translated so that (centerX, centerY) is in the middle of the viewport
+        // Viewport center is board (2000, 2000)
+        board.style.transformOrigin = "2000px 2000px";
+        board.style.transform = `scale(${scale}) translate(${(2000 - centerX)}px, ${(2000 - centerY)}px)`;
     }
 
     function drawPipelinePipe(x1, y1, x2, y2, board) {
