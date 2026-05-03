@@ -11,10 +11,13 @@
     <canvas id="bg-canvas"></canvas>
 
     <div id="loading-overlay" class="hidden">
-        <div class="status-container">
-            <div class="status-pulse"></div>
-            <div id="status-display" class="status-text">Initializing UrlForge Engine...</div>
+        <div class="engine-background-grid"></div>
+        <div class="pipeline-viewport">
+            <div id="dynamic-pipeline" class="pipeline-board">
+                <!-- Cards and lines will be injected here -->
+            </div>
         </div>
+        <div id="status-display" class="status-text">Initializing UrlForge Engine...</div>
     </div>
 
     <div class="nav-container">
@@ -1363,6 +1366,10 @@
             const submitBtn = form.querySelector('.submit-btn');
             const statusDisplay = document.getElementById('status-display');
             
+            // RESET PIPELINE STATE
+            pipelineNodes = [];
+            document.getElementById('dynamic-pipeline').innerHTML = '';
+            
             overlay.classList.remove('hidden');
             overlay.style.background = 'transparent'; 
             overlay.style.backdropFilter = 'none';
@@ -1432,6 +1439,7 @@
                         if (currentStatus && currentStatus !== lastStatus) {
                             lastStatus = currentStatus;
                             if (window.brain) window.brain.showCategory(currentStatus);
+                            updatePipeline(currentStatus);
                             
                             statusDisplay.style.opacity = '0';
                             setTimeout(() => {
@@ -1634,6 +1642,11 @@
             
             document.body.classList.add('analytical-mode');
             if (window.brain) window.brain.startThinking();
+            
+            // RESET PIPELINE STATE
+            pipelineNodes = [];
+            document.getElementById('dynamic-pipeline').innerHTML = '';
+            
             const overlay = document.getElementById('loading-overlay');
             const statusDisplay = document.getElementById('status-display');
             overlay.classList.remove('hidden');
@@ -1657,6 +1670,7 @@
                                 if (currentStatus && currentStatus !== lastStatus) {
                                     lastStatus = currentStatus;
                                     if (window.brain) window.brain.showCategory(currentStatus);
+                                    updatePipeline(currentStatus);
                                     statusDisplay.style.opacity = '0';
                                     setTimeout(() => {
                                         statusDisplay.innerText = currentStatus;
@@ -1813,6 +1827,153 @@
             saveBtn.innerText = 'Save Site Profile';
             saveBtn.disabled = false;
         }
+    }
+
+    let pipelineNodes = [];
+    function updatePipeline(status) {
+        const board = document.getElementById('dynamic-pipeline');
+        if (!board) return;
+
+        const lowerStatus = status.toLowerCase();
+        if (lowerStatus === 'thinking...' || lowerStatus === 'processing...') return;
+
+        const moduleKeywords = ['vitals', 'sitemap', 'broken', 'meta', 'header', 'schema', 'content', 'keyword', 'competitor', 'image', 'speed', 'mobile', 'experience', 'fixing', 'deploying', 'audit'];
+        
+        if ((lowerStatus.includes('page ') || lowerStatus.includes('fetch')) && pipelineNodes.length > 0) {
+            const lastNode = pipelineNodes[pipelineNodes.length - 1];
+            const pill = lastNode.el.querySelector('.node-label-pill');
+            if (pill) pill.innerText = status;
+            return;
+        }
+
+        const currentType = moduleKeywords.find(k => lowerStatus.includes(k)) || 'process';
+        const isNewSignificantStage = pipelineNodes.length === 0 || 
+            (currentType !== 'process' && currentType !== pipelineNodes[pipelineNodes.length-1].type);
+
+        if (isNewSignificantStage) {
+             if (pipelineNodes.length > 0) {
+                 const lastNode = pipelineNodes[pipelineNodes.length - 1];
+                 lastNode.el.classList.remove('active');
+                 lastNode.el.classList.add('completed');
+                 if (lastNode.pipe) lastNode.pipe.classList.add('completed');
+             }
+
+             const index = pipelineNodes.length;
+             // Isometric Path Logic (Zig-Zag along the grid)
+             const step = 250;
+             let targetX, targetY;
+             
+             if (index === 0) {
+                 targetX = 1000;
+                 targetY = 1000;
+             } else {
+                 const prev = pipelineNodes[index - 1];
+                 // Alternating direction for zig-zag
+                 if (Math.floor(index / 3) % 2 === 0) {
+                     targetX = prev.x + step;
+                     targetY = prev.y;
+                 } else {
+                     targetX = prev.x;
+                     targetY = prev.y + step;
+                 }
+             }
+             
+             const nodeEl = document.createElement('div');
+             nodeEl.className = 'pipeline-node active';
+             
+             // Spawn at previous node position
+             const startPos = pipelineNodes.length > 0 ? pipelineNodes[pipelineNodes.length-1] : { x: 1000, y: 1000 };
+             nodeEl.style.left = `${startPos.x}px`;
+             nodeEl.style.top = `${startPos.y}px`;
+             
+             let icon = "⚙️";
+             let color = "#fff";
+             if (lowerStatus.includes('crawl')) { icon = "🕸️"; color = "#3b82f6"; }
+             else if (lowerStatus.includes('vitals')) { icon = "⚡"; color = "#f59e0b"; }
+             else if (lowerStatus.includes('analyz') || lowerStatus.includes('audit')) { icon = "📊"; color = "#a855f7"; }
+             else if (lowerStatus.includes('fix')) { icon = "🔧"; color = "#10b981"; }
+             else if (lowerStatus.includes('deploy')) { icon = "🚀"; color = "#ef4444"; }
+             
+             nodeEl.innerHTML = `
+                <div class="node-glow" style="--glow-color: ${color}"></div>
+                <div class="node-platform">
+                    <div class="node-icon">${icon}</div>
+                </div>
+                <div class="node-label-pill">${status}</div>
+             `;
+             
+             board.appendChild(nodeEl);
+             
+             setTimeout(() => {
+                 nodeEl.style.left = `${targetX}px`;
+                 nodeEl.style.top = `${targetY}px`;
+                 
+                 setTimeout(() => {
+                     if (pipelineNodes.length > 1) {
+                         const prev = pipelineNodes[pipelineNodes.length - 1];
+                         const pipe = drawPipelinePipe(prev.x + 60, prev.y + 60, targetX + 60, targetY + 60, board);
+                         prev.pipe = pipe;
+                     }
+                     adjustPipelineScaling();
+                 }, 400);
+             }, 50);
+
+             pipelineNodes.push({ type: currentType, status, el: nodeEl, x: targetX, y: targetY });
+        } else if (pipelineNodes.length > 0) {
+             const lastNode = pipelineNodes[pipelineNodes.length - 1];
+             const pill = lastNode.el.querySelector('.node-label-pill');
+             if (pill) pill.innerText = status;
+        }
+    }
+
+    function adjustPipelineScaling() {
+        const viewport = document.querySelector('.pipeline-viewport');
+        const board = document.getElementById('dynamic-pipeline');
+        if (!viewport || !board || pipelineNodes.length === 0) return;
+
+        let minX = 10000, maxX = -10000, minY = 10000, maxY = -10000;
+        pipelineNodes.forEach(n => {
+            minX = Math.min(minX, n.x);
+            maxX = Math.max(maxX, n.x + 120);
+            minY = Math.min(minY, n.y);
+            maxY = Math.max(maxY, n.y + 120); 
+        });
+
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        const vw = viewport.clientWidth * 0.7;
+        const vh = viewport.clientHeight * 0.7;
+        
+        const scale = Math.min(1.0, vw / Math.max(800, width), vh / Math.max(600, height));
+        
+        const centerX = minX + width / 2;
+        const centerY = minY + height / 2;
+        
+        // Isometric transform: rotateX(60deg) rotateZ(45deg)
+        board.style.transform = `scale(${scale}) translate(${-centerX + 1000}px, ${-centerY + 1000}px) rotateX(60deg) rotateZ(45deg)`;
+    }
+
+    function drawPipelinePipe(x1, y1, x2, y2, board) {
+        const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+        
+        const pipe = document.createElement('div');
+        pipe.className = 'pipeline-pipe active';
+        pipe.style.width = `0px`;
+        pipe.style.left = `${x1}px`;
+        pipe.style.top = `${y1}px`;
+        pipe.style.transformOrigin = 'left center';
+        pipe.style.transform = `rotate(${angle}deg)`;
+        pipe.style.transition = 'width 0.6s ease-out';
+        
+        pipe.innerHTML = `<div class="pipe-flow"></div>`;
+        board.appendChild(pipe);
+        
+        // Animate growth
+        setTimeout(() => { pipe.style.width = `${length}px`; }, 50);
+        
+        return pipe;
     }
 
     function downloadAnalysis() {

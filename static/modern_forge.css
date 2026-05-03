@@ -5,14 +5,19 @@
     --text-color: #ffffff;
     --text-muted: #a1a1aa;
     --primary-color: #ffffff;
-    --accent-color: #ef4444; /* Bright red for alerts/accents */
+    --accent-color: #ef4444; 
     --card-bg: rgba(255, 255, 255, 0.03);
     --card-border: rgba(255, 255, 255, 0.1);
     --nav-bg: rgba(0, 0, 0, 0.7);
     --glass-blur: 16px;
-    --success-color: #10b981;
+    --success-color: #f59e0b; /* Yellow/Orange for success path as requested */
     --warning-color: #f59e0b;
     --error-color: #ef4444;
+    
+    /* Pipeline Specific */
+    --node-blue: #3b82f6;
+    --node-orange: #f59e0b;
+    --node-purple: #8b5cf6;
 }
 
 .markdown-body {
@@ -57,30 +62,36 @@ body {
     min-height: 100vh;
 }
 
-/* Background Canvas */
 #bg-canvas {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1; /* Changed back to -1 to prevent blocking clicks */
+    z-index: -1; 
     pointer-events: none;
 }
 
-/* Background should be on the canvas, not the body */
 body {
     background-color: #000;
 }
 
-/* Analytical & Results Mode - Persistent Title Hide */
+/* Analytical & Results Mode */
 body.analytical-mode .nav-container,
 body.analytical-mode .hero-section,
 body.analytical-mode .glass-card,
+body.analytical-mode #features-section,
+body.analytical-mode #faqs-section,
 body.mode-results .hero-section {
     opacity: 0;
     transform: scale(0.9) translateY(40px);
     pointer-events: none;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.analytical-mode #features-section,
+body.analytical-mode #faqs-section {
+    display: none;
 }
 
 body.mode-results .glass-card {
@@ -92,7 +103,7 @@ body.mode-results .glass-card {
 body.analytical-mode .hero-section,
 body.mode-results .hero-section {
     transform: translateY(-40px);
-    display: none; /* Persistent removal */
+    display: none; 
 }
 
 /* Navigation */
@@ -104,6 +115,7 @@ body.mode-results .hero-section {
     width: 90%;
     max-width: 1200px;
     z-index: 1000;
+    transition: opacity 0.5s;
 }
 
 .modern-nav {
@@ -620,76 +632,249 @@ input:focus {
     font-size: 0.85rem;
 }
 
-/* --- CINEMATIC STATUS INDICATOR --- */
+/* --- DYNAMIC PIPELINE UI STYLES (PREMIUM OVERHAUL) --- */
 #loading-overlay {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 2000;
-    pointer-events: none;
-    text-align: center;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.status-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
 }
 
-.status-pulse {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+.engine-background-grid {
+    position: absolute;
+    width: 400%;
+    height: 400%;
+    top: -150%;
+    left: -150%;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    transform: rotateX(60deg) rotateZ(45deg);
+    animation: grid-scroll-iso 40s linear infinite;
+    z-index: 1;
+}
+
+@keyframes grid-scroll-iso {
+    from { background-position: 0 0; }
+    to { background-position: 60px 60px; }
+}
+
+.pipeline-viewport {
     position: relative;
+    width: 100%;
+    height: 85vh;
+    perspective: 1500px;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.status-pulse::after {
-    content: '';
+.pipeline-board {
+    position: relative;
+    width: 2000px;
+    height: 2000px;
+    transform-style: preserve-3d;
+    transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: rotateX(60deg) rotateZ(45deg);
+}
+
+.pipeline-node {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    transform-style: preserve-3d;
+    z-index: 5;
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.node-platform {
     position: absolute;
     width: 100%;
     height: 100%;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    animation: pulse-ring 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    background: rgba(40, 40, 40, 0.95);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    transform: translateZ(20px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes pulse-ring {
-    0% { transform: scale(0.8); opacity: 0.8; }
-    50% { opacity: 0.4; }
-    100% { transform: scale(1.8); opacity: 0; }
+/* 3D Sides of the node */
+.node-platform::before, .node-platform::after {
+    content: '';
+    position: absolute;
+    background: rgba(30, 30, 30, 1);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-#status-display {
+/* Right side */
+.node-platform::before {
+    width: 20px;
+    height: 100%;
+    right: -20px;
+    top: 0;
+    transform-origin: left;
+    transform: rotateY(90deg);
+}
+
+/* Bottom side */
+.node-platform::after {
+    width: 100%;
+    height: 20px;
+    bottom: -20px;
+    left: 0;
+    transform-origin: top;
+    transform: rotateX(-90deg);
+}
+
+.pipeline-node.active .node-platform {
+    border-color: #fff;
+    transform: translateZ(40px);
+    box-shadow: 0 40px 80px rgba(255,255,255,0.2);
+}
+
+.pipeline-node.completed .node-platform {
+    border-color: var(--success-color);
+    transform: translateZ(25px);
+    box-shadow: 0 25px 50px rgba(245, 158, 11, 0.2);
+}
+
+.node-glow {
+    position: absolute;
+    width: 180%;
+    height: 180%;
+    top: -40%;
+    left: -40%;
+    background: radial-gradient(circle, var(--glow-color, #fff) 0%, transparent 70%);
+    opacity: 0;
+    filter: blur(30px);
+    transform: translateZ(-10px);
+    transition: opacity 0.5s;
+}
+
+.pipeline-node.active .node-glow { opacity: 0.6; }
+.pipeline-node.completed .node-glow { opacity: 0.3; }
+
+.node-icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 0 15px rgba(255,255,255,0.4));
+    transform: rotateZ(-45deg) rotateX(-60deg); /* Counter-rotate icon to face camera */
+}
+
+.node-label-pill {
+    position: absolute;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%) rotateZ(-45deg) rotateX(-60deg); /* Face camera */
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 12px 24px;
+    white-space: nowrap;
+    color: #fff;
+    font-weight: 900;
     font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.pipeline-node.active .node-label-pill,
+.pipeline-node.completed .node-label-pill {
+    opacity: 1;
+}
+
+.pipeline-pipe {
+    position: absolute;
+    height: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 20px;
+    transform-origin: left center;
+    pointer-events: none;
+    z-index: 1;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+}
+
+.pipe-flow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #f59e0b, #fff, #f59e0b, transparent);
+    background-size: 200% 100%;
+    border-radius: 20px;
+    box-shadow: 0 0 30px #f59e0b;
+    opacity: 0;
+    transition: opacity 0.5s;
+    animation: pipe-flow-anim 1.5s linear infinite;
+}
+
+.pipeline-pipe.active .pipe-flow { 
+    opacity: 1;
+}
+
+.pipeline-pipe.completed {
+    background: rgba(245, 158, 11, 0.4);
+    border-color: #f59e0b;
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+}
+
+.pipeline-pipe.completed .pipe-flow {
+    opacity: 0.5;
+}
+
+@keyframes pipe-flow-anim {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.status-text {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 4px;
     text-transform: uppercase;
     color: #fff;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-    min-width: 300px;
+    text-shadow: 0 0 20px rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(20px);
+    padding: 14px 40px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.2);
 }
 
-.status-fade-in {
-    animation: statusTextIn 0.4s ease-out forwards;
-}
-
-@keyframes statusTextIn {
-    0% { opacity: 0; transform: translateY(10px) scale(0.95); filter: blur(4px); }
-    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
-
-/* Force results mode to show glass cards */
+/* Force results mode to hide overlay */
 body.mode-results #loading-overlay {
-    opacity: 0;
-    pointer-events: none;
+    display: none;
+}
+
+/* Responsive Scaling Utilities */
+.pipeline-viewport.fit-nodes {
+    transform: scale(var(--pipeline-scale, 1));
 }
 
 /* --- Response for long labels --- */
